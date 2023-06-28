@@ -1,0 +1,11 @@
+Die {
+  height: 3;
+  margin: 1;
+  padding: 1;
+  background: $success;
+  color: $text;
+}
+
+Die.rolling {
+  background: $boost;
+}

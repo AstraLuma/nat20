@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "pixels-bleak"
+version = "0.1.0"
+description = "Access Pixels dice with async and bleak"
+authors = ["Jamie Bliss <jamie@ivyleav.es>"]
+license = "GPL-3.0"
+readme = "README.md"
+packages = [{include = "pixels_bleak"}, {include = "pixelize"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+bleak = "^0.20.2"
+
+
+[tool.poetry.group.tui.dependencies]
+textual = "^0.28.1"
+
+
+[tool.poetry.group.dev.dependencies]
+textual = {extras = ["dev"], version = "^0.28.1"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
