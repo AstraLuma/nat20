@@ -37,7 +37,10 @@ logging.config.dictConfig({
 async def main():
     async for sr in scan_for_dice():
         break
+    else:
+        raise RuntimeError("nope")
     print(f"{sr=}")
+    assert sr is not None
 
     async with sr.connect() as die:
         @die.handler(...)
@@ -45,6 +48,7 @@ async def main():
             print(f"Received {msg}")
         print(f"{die=}")
         print(await die.who_are_you())
-        # await asyncio.sleep(10)
+        print(await die.roll_state())
+        await asyncio.sleep(10)
 
 asyncio.run(main())

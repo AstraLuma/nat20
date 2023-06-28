@@ -87,8 +87,26 @@ class RollState(BasicMessage, id=3, format="BB"):
 
 
 @dataclass
-class Telemetry(BasicMessage, id=4, format=""):
-    ...
+class Telemetry(BasicMessage, id=4, format="50x BBBB bB hh BB"):
+    # accelFrame: ...  # TODO
+
+    battery_percent: int
+    battery_state: BatteryState
+    #: times 50
+    voltage: int
+    #: times 50
+    v_coil: int
+
+    rssi: int
+    #: 0-based
+    bt_channel: int
+    #: times 100
+    mcu_temp: int
+    #: times 100
+    battery_temp: int
+
+    internal_charge_state: int
+    force_disable_charging_state: int
 
 
 @dataclass
@@ -157,33 +175,47 @@ class TransferTestAnimationSetFinished(BasicMessage, id=17, format=""):
 
 
 @dataclass
-class DebugLog(BasicMessage, id=18, format=""):
-    ...
+class DebugLog(Message, id=18):
+    text: str
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        return cls(
+            text=blob.decode('utf-8')
+        )
+
+    def __struct_pack__(self) -> bytes:
+        return self.text.encode('utf-8')
 
 
 @dataclass
-class PlayAnimation(BasicMessage, id=19, format=""):
-    ...
+class PlayAnimation(BasicMessage, id=19, format="BBB"):
+    animation: int
+    remap_face: int
+    loop: int
 
 
 @dataclass
-class PlayAnimationEvent(BasicMessage, id=20, format=""):
-    ...
+class PlayAnimationEvent(BasicMessage, id=20, format="BBB"):
+    evt: int
+    remap_face: int
+    loop: int
 
 
 @dataclass
-class StopAnimation(BasicMessage, id=21, format=""):
-    ...
+class StopAnimation(BasicMessage, id=21, format="BB"):
+    animation: int
+    remap_face: int
 
 
 @dataclass
-class RemoteAction(BasicMessage, id=22, format=""):
-    ...
+class RemoteAction(BasicMessage, id=22, format="H"):
+    action_id: int
 
 
 @dataclass
 class RequestRollState(BasicMessage, id=23, format=""):
-    ...
+    pass
 
 
 @dataclass

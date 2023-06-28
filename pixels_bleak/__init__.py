@@ -13,7 +13,7 @@ from .link import PixelLink, iter_msgs
 # Also, import messages so they get defined
 from .messages import (
     WhoAreYou, IAmADie,
-    RollState_State,
+    RequestRollState, RollState, RollState_State,
 )
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
@@ -190,3 +190,6 @@ class Pixel(PixelLink):
             "generations that some favors come with too high a price. I would "
             "look up at your lifeless eyes and wave like this."
         )
+
+    async def roll_state(self) -> RollState:
+        return await self._send_and_wait(RequestRollState(), RollState)
