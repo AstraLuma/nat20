@@ -3,16 +3,18 @@ import dataclasses
 import datetime
 import enum
 import struct
-from collections.abc import (
-    AsyncIterable,
-)
+from typing import Union
+from collections.abc import AsyncIterable
 
 import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
-from .link import PixelLink
+from .link import PixelLink, iter_msgs
 # Also, import messages so they get defined
-from .messages import RollState_State
+from .messages import (
+    WhoAreYou, IAmADie,
+    RollState_State,
+)
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
 # in enums, but none of the first-party code does that.
@@ -138,6 +140,7 @@ class Pixel(PixelLink):
 
     async def __aexit__(self, *exc):
         await super().__aexit__(*exc)
+        print("Disconnecting")
         await self._client.disconnect()
 
     def __repr__(self):
@@ -156,3 +159,34 @@ class Pixel(PixelLink):
         Are we currently connected to the die?
         """
         return self._client.is_connected
+
+    def handler(self, msgcls: Union[type(...), type]):
+        """
+        Register to receive notifcations of events.
+
+        @Pixel.register(RollState)
+        def foobar
+        """
+        # FIXME: Correctly handle methods?
+        def _(func):
+            if msgcls is ...:
+                for cls in iter_msgs():
+                    self._message_handlers[cls].append(func)
+            else:
+                self._message_handlers[msgcls].append(func)
+
+        return _
+
+    async def who_are_you(self) -> IAmADie:
+        """
+        Perform a basic info query
+        """
+        return await self._send_and_wait(WhoAreYou(), IAmADie)
+
+    async def what_do_you_want(self):
+        return (
+            "I'd like to live just long enough to be there when they cut off "
+            "your head and stick it on a pike as a warning to the next ten "
+            "generations that some favors come with too high a price. I would "
+            "look up at your lifeless eyes and wave like this."
+        )

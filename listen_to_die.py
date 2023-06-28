@@ -40,7 +40,11 @@ async def main():
     print(f"{sr=}")
 
     async with sr.connect() as die:
+        @die.handler(...)
+        def recv(msg):
+            print(f"Received {msg}")
         print(f"{die=}")
-        await asyncio.sleep(10)
+        print(await die.who_are_you())
+        # await asyncio.sleep(10)
 
 asyncio.run(main())

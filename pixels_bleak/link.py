@@ -9,7 +9,7 @@ import inspect
 import logging
 import struct
 import sys
-from typing import Optional, Self
+from typing import Optional, Self, Iterable
 
 import bleak
 
@@ -20,6 +20,10 @@ LOG = logging.getLogger(__name__)
 
 
 _messages = {}
+
+
+def iter_msgs() -> Iterable[type]:
+    yield from _messages.values()
 
 
 def msgid(msg) -> Optional[int]:
@@ -78,7 +82,7 @@ class BasicMessage(Message, id=None):
 
     def __struct_pack__(self) -> bytes:
         fields = dataclasses.astuple(self)
-        return struct.pack(self.__struct_format, fields)
+        return struct.pack(self.__struct_format, *fields)
 
 
 def _call_or_task(func, *pargs, **kwargs):
@@ -138,6 +142,7 @@ class PixelLink:
         """
         Does the bits necessary to stop receiving stuff.
         """
+        print("Unsubbing")
         await self._client.stop_notify(CHARI_NOTIFY)
 
     async def _recv_notify(self, _, packet: bytearray):
@@ -147,17 +152,20 @@ class PixelLink:
         except KeyError:
             LOG.error("Unknown message ID=%i", msgid)
         else:
-            msg = msgcls.__struct_unpack__(blob)
-            self._dispatch(msg)
+            try:
+                msg = msgcls.__struct_unpack__(blob)
+            except Exception:
+                LOG.exception("Problem unpacking packet")
+            else:
+                self._dispatch(msg)
 
     def _dispatch(self, message: Message):
         """
         Calls the handlers of a message & performs maintenance.
         """
-        print(f"{message=}")
         LOG.debug("Dispatching %r", message)
         msgcls = type(message)
-        if self._wait_queue[msgcls]:
+        if len(self._wait_queue[msgcls]):
             fut = self._wait_queue[msgcls].pop(0)
             fut.set_result(message)
         else:
@@ -168,8 +176,8 @@ class PixelLink:
         """
         Send a message to the connected device
         """
-        blob = message.__struct_pack__()
-        self._client.write_gatt_char(CHARI_WRITE, blob)
+        blob = bytes([msgid(message)]) + message.__struct_pack__()
+        await self._client.write_gatt_char(CHARI_WRITE, blob)
 
     async def _wait(self, msgcls: type) -> Message:
         """
@@ -179,7 +187,7 @@ class PixelLink:
         :meth:`_send_and_wait`, it has better async properties.
         """
         fut = asyncio.get_event_loop().create_future()
-        self._wait_queue[msgid(msgcls)].append(fut)
+        self._wait_queue[msgcls].append(fut)
         return await fut
 
     async def _send_and_wait(self, msg: Message, respcls: type) -> Message:
@@ -189,6 +197,6 @@ class PixelLink:
         Returns the response.
         """
         fut = asyncio.get_event_loop().create_future()
-        self._wait_queue[msgid(respcls)].append(fut)
+        self._wait_queue[respcls].append(fut)
         await self._send(msg)
         return await fut

@@ -1,23 +1,25 @@
 from dataclasses import dataclass
+import datetime
 from enum import IntEnum
 from typing import Self
 
 from .link import Message, BasicMessage
 
 
-@dataclass
-class NoneMessage(BasicMessage, id=0, format=""):
-    pass
-
-
-@dataclass
-class WhoAreYou(BasicMessage, id=1, format=""):
-    ...
-
-
-@dataclass
-class IAmADie(BasicMessage, id=2, format=""):
-    ...
+class BatteryState(IntEnum):
+    #: Discharging
+    Ok = 0
+    #: Battery level is low, user should recharge
+    Low = 1
+    #: Battery is charging
+    Charging = 2
+    #: Battery is full and on craddle
+    Done = 3
+    #: Attempted to charge, but something went wrong (eg, coil voltage is wrong
+    #: from sitting crooked)
+    BadCharging = 4
+    #: WEIRDNESS (eg charging but no coil voltage)
+    Error = 5
 
 
 class RollState_State(IntEnum):
@@ -34,6 +36,42 @@ class RollState_State(IntEnum):
     Rolling = 3
     #: The die is still but not flat and level
     Crooked = 4
+
+
+@dataclass
+class NoneMessage(BasicMessage, id=0, format=""):
+    pass
+
+
+@dataclass
+class WhoAreYou(BasicMessage, id=1, format=""):
+    pass
+
+
+@dataclass
+class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
+    led_count: int
+    design_and_color: int  # TODO: enum
+    data_set_hash: int
+    pixel_id: int
+    available_flash: int
+    build_timestamp: int  # TODO: datetime
+
+    roll_state: RollState_State
+    roll_face: int
+
+    battery_percent: int
+    battery_state: BatteryState
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.roll_state = RollState_State(self.roll_state)
+        self.battery_state = BatteryState(self.battery_state)
+        self.build_timestamp = datetime.datetime.fromtimestamp(
+            self.build_timestamp, tz=datetime.timezone.utc)
+
+        return self
 
 
 @dataclass
@@ -196,22 +234,6 @@ class DefaultAnimationSetColor(BasicMessage, id=32, format=""):
 @dataclass
 class RequestBatteryLevel(BasicMessage, id=33, format=""):
     ...
-
-
-class BatteryState(IntEnum):
-    #: Discharging
-    Ok = 0
-    #: Battery level is low, user should recharge
-    Low = 1
-    #: Battery is charging
-    Charging = 2
-    #: Battery is full and on craddle
-    Done = 3
-    #: Attempted to charge, but something went wrong (eg, coil voltage is wrong
-    #: from sitting crooked)
-    BadCharging = 4
-    #: WEIRDNESS (eg charging but no coil voltage)
-    Error = 5
 
 
 @dataclass
