@@ -9,12 +9,8 @@ from collections.abc import (
 
 import bleak
 
+from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
-
-SERVICE_PIXELS = bleak.uuids.normalize_uuid_str(
-    "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
-)
-SERVICE_INFO = bleak.uuids.normalize_uuid_str('180a')
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
 # in enums, but none of the first-party code does that.
@@ -142,27 +138,20 @@ class Pixel(PixelLink):
     # scan by name or ID or whatever.
 
     def __init__(self, device: bleak.backends.device.BLEDevice):
-        super().__init__()
         self._device = device
         self._client = bleak.BleakClient(
             device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
         )
-        self._task = None
+        super().__init__()
 
     async def __aenter__(self):
         await self._client.connect()
-        self._task = asyncio.create_task(
-            self._message_pump_task,
-            name=f"pump-{self.address}"
-        )
+        await super().__aenter__()
         return self
 
     async def __aexit__(self, *exc):
-        self._task.cancel()
-        await self._task
-        self._task = None
-
+        await super().__aexit__(*exc)
         await self._client.disconnect()
 
     def __del__(self):

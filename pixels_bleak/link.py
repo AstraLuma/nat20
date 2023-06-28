@@ -5,11 +5,18 @@ import abc
 import asyncio
 import collections
 import dataclasses
+import inspect
+import logging
 import struct
 import sys
 from typing import Optional, Self
 
 import bleak
+
+from .constants import CHARI_NOTIFY, CHARI_WRITE
+
+
+LOG = logging.getLogger(__name__)
 
 
 _messages = {}
@@ -74,6 +81,23 @@ class BasicMessage(Message, id=None):
         return struct.pack(self.__struct_format, fields)
 
 
+def _call_or_task(func, *pargs, **kwargs):
+    """
+    Calls the given function. Async functions are wrapped in a Task.
+    """
+    rv = func(*pargs, **kwargs)
+    if inspect.isawaitable(rv):
+        asyncio.ensure_future(rv)
+
+
+async def _get_real_mtu(client):
+    # https://github.com/hbldh/bleak/blob/master/examples/mtu_size.py
+    if client._backend.__class__.__name__ == "BleakClientBlueZDBus":
+        await client._backend._acquire_mtu()
+
+    return client.mtu_size
+
+
 class PixelLink:
     """
     All the messy details of communicating with a Pixels die.
@@ -100,15 +124,49 @@ class PixelLink:
         self._wait_queue = collections.defaultdict(list)
         self._message_handlers = collections.defaultdict(list)
 
-    async def _message_pump_task(self):
+    async def __aenter__(self):
         """
-        Background task to receive & dispatch messages from the device.
+        Does the bits necessary to start receiving stuff.
         """
+        mtu = await _get_real_mtu(self._client)
+        print("MTU:", mtu)
+        assert mtu >= 517, f"Insufficient MTU ({mtu} < 517)"
+        await self._client.start_notify(CHARI_NOTIFY, self._recv_notify)
+
+    async def __aexit__(self, *exc):
+        """
+        Does the bits necessary to stop receiving stuff.
+        """
+        await self._client.stop_notify(CHARI_NOTIFY)
+
+    async def _recv_notify(self, _, packet: bytearray):
+        msgid, blob = packet[0], packet[1:]
+        try:
+            msgcls = _messages[msgid]
+        except KeyError:
+            LOG.error("Unknown message ID=%i", msgid)
+        else:
+            msg = msgcls.__struct_unpack__(blob)
+            self._dispatch(msg)
+
+    def _dispatch(self, message: Message):
+        """
+        Calls the handlers of a message & performs maintenance.
+        """
+        msgcls = type(message)
+        if self._wait_queue[msgcls]:
+            fut = self._wait_queue[msgcls].pop(0)
+            fut.set_result(message)
+        else:
+            for handler in self._message_handlers[msgcls]:
+                _call_or_task(handler, message)
 
     async def _send(self, message: Message):
         """
         Send a message to the connected device
         """
+        blob = message.__struct_pack__()
+        self._client.write_gatt_char(CHARI_WRITE, blob)
 
     async def _wait(self, msgcls: type) -> Message:
         """
