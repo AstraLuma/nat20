@@ -11,32 +11,18 @@ import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
+# Also, import messages so they get defined
+from .messages import RollState_State
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
 # in enums, but none of the first-party code does that.
 
 
-class RollState(enum.IntEnum):
-    """
-    The current motion of the die.
-    """
-    Unknown = 0
-    #: The die is sitting flat and is not moving
-    OnFace = enum.auto()
-    #: The die is in hand (Note: I'm not sure how reliable the detection of
-    #: this state is.)
-    Handling = enum.auto()
-    #: The die is actively rolling
-    Rolling = enum.auto()
-    #: The die is still but not flat and level
-    Crooked = enum.auto()
-
-
-class BattState(enum.IntEnum):
+class ScanBattState(enum.IntEnum):
     """
     The charge state of the battery.
     """
-    Discharging = 0
+    Ok = 0
     Charging = 1
 
 
@@ -50,11 +36,11 @@ class ScanResult:
     #: The color and symbol set
     design: int  # TODO: Enum
     #: The motion of the die
-    roll_state: RollState
+    roll_state: RollState_State
     #: The current face (starting at 0)
     face: int
     #: The charge state of the battery
-    batt_state: BattState
+    batt_state: ScanBattState
     #: The level of the battery, as a percent
     batt_level: int
     #: The unique ID of the die
@@ -75,9 +61,9 @@ class ScanResult:
             name=name,
             led_count=led_count,
             design=design,
-            roll_state=RollState(roll_state),
+            roll_state=RollState_State(roll_state),
             face=face,
-            batt_state=BattState(batt >> 7),
+            batt_state=ScanBattState(batt >> 7),
             batt_level=batt & 0x7F,
             id=id,
             firmware_timestamp=build,
@@ -154,14 +140,8 @@ class Pixel(PixelLink):
         await super().__aexit__(*exc)
         await self._client.disconnect()
 
-    def __del__(self):
-        if self._task is not None:
-            # This implies some kind of improper shutdown, but cleanup anyway.
-            self._task.cancel()
-            self._task = None
-
     def __repr__(self):
-        return f"<{type(self).__name__} {self.address} is_connected={self.is_connnected}>"
+        return f"<{type(self).__name__} {self.address} is_connected={self.is_connected}>"
 
     @property
     def address(self) -> str:

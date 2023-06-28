@@ -50,7 +50,6 @@ class Message(abc.ABC):
         raise NotImplementedError
 
     def __init_subclass__(cls, /, id: int, **kwargs):
-        print(kwargs)
         super().__init_subclass__(**kwargs)
         if id is not None:
             cls.__id = id
@@ -72,9 +71,10 @@ class BasicMessage(Message, id=None):
         super().__init_subclass__(**kwargs)
         cls.__struct_format = sys.intern(f"<{format}")
 
+    @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
         fields = struct.unpack(cls.__struct_format, blob)
-        return cls(fields)
+        return cls(*fields)
 
     def __struct_pack__(self) -> bytes:
         fields = dataclasses.astuple(self)
@@ -128,9 +128,10 @@ class PixelLink:
         """
         Does the bits necessary to start receiving stuff.
         """
-        mtu = await _get_real_mtu(self._client)
-        print("MTU:", mtu)
-        assert mtu >= 517, f"Insufficient MTU ({mtu} < 517)"
+        # https://github.com/hbldh/bleak/discussions/1350#discussioncomment-6308104
+        # mtu = await _get_real_mtu(self._client)
+        # print("MTU:", mtu)
+        # assert mtu >= 517, f"Insufficient MTU ({mtu} < 517)"
         await self._client.start_notify(CHARI_NOTIFY, self._recv_notify)
 
     async def __aexit__(self, *exc):
@@ -153,6 +154,8 @@ class PixelLink:
         """
         Calls the handlers of a message & performs maintenance.
         """
+        print(f"{message=}")
+        LOG.debug("Dispatching %r", message)
         msgcls = type(message)
         if self._wait_queue[msgcls]:
             fut = self._wait_queue[msgcls].pop(0)

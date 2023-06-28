@@ -1,0 +1,446 @@
+from dataclasses import dataclass
+from enum import IntEnum
+from typing import Self
+
+from .link import Message, BasicMessage
+
+
+@dataclass
+class NoneMessage(BasicMessage, id=0, format=""):
+    pass
+
+
+@dataclass
+class WhoAreYou(BasicMessage, id=1, format=""):
+    ...
+
+
+@dataclass
+class IAmADie(BasicMessage, id=2, format=""):
+    ...
+
+
+class RollState_State(IntEnum):
+    """
+    The current motion of the die.
+    """
+    Unknown = 0
+    #: The die is sitting flat and is not moving
+    OnFace = 1
+    #: The die is in hand (Note: I'm not sure how reliable the detection of
+    #: this state is.)
+    Handling = 2
+    #: The die is actively rolling
+    Rolling = 3
+    #: The die is still but not flat and level
+    Crooked = 4
+
+
+@dataclass
+class RollState(BasicMessage, id=3, format="BB"):
+    state: RollState_State
+    face: int
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.state = RollState_State(self.state)
+        return self
+
+
+@dataclass
+class Telemetry(BasicMessage, id=4, format=""):
+    ...
+
+
+@dataclass
+class BulkSetup(BasicMessage, id=5, format=""):
+    ...
+
+
+@dataclass
+class BulkSetupAck(BasicMessage, id=6, format=""):
+    ...
+
+
+@dataclass
+class BulkData(BasicMessage, id=7, format=""):
+    ...
+
+
+@dataclass
+class BulkDataAck(BasicMessage, id=8, format=""):
+    ...
+
+
+@dataclass
+class TransferAnimationSet(BasicMessage, id=9, format=""):
+    ...
+
+
+@dataclass
+class TransferAnimationSetAck(BasicMessage, id=10, format=""):
+    ...
+
+
+@dataclass
+class TransferAnimationSetFinished(BasicMessage, id=11, format=""):
+    ...
+
+
+@dataclass
+class TransferSettings(BasicMessage, id=12, format=""):
+    ...
+
+
+@dataclass
+class TransferSettingsAck(BasicMessage, id=13, format=""):
+    ...
+
+
+@dataclass
+class TransferSettingsFinished(BasicMessage, id=14, format=""):
+    ...
+
+
+@dataclass
+class TransferTestAnimationSet(BasicMessage, id=15, format=""):
+    ...
+
+
+@dataclass
+class TransferTestAnimationSetAck(BasicMessage, id=16, format=""):
+    ...
+
+
+@dataclass
+class TransferTestAnimationSetFinished(BasicMessage, id=17, format=""):
+    ...
+
+
+@dataclass
+class DebugLog(BasicMessage, id=18, format=""):
+    ...
+
+
+@dataclass
+class PlayAnimation(BasicMessage, id=19, format=""):
+    ...
+
+
+@dataclass
+class PlayAnimationEvent(BasicMessage, id=20, format=""):
+    ...
+
+
+@dataclass
+class StopAnimation(BasicMessage, id=21, format=""):
+    ...
+
+
+@dataclass
+class RemoteAction(BasicMessage, id=22, format=""):
+    ...
+
+
+@dataclass
+class RequestRollState(BasicMessage, id=23, format=""):
+    ...
+
+
+@dataclass
+class RequestAnimationSet(BasicMessage, id=24, format=""):
+    ...
+
+
+@dataclass
+class RequestSettings(BasicMessage, id=25, format=""):
+    ...
+
+
+@dataclass
+class RequestTelemetry(BasicMessage, id=26, format=""):
+    ...
+
+
+@dataclass
+class ProgramDefaultAnimationSet(BasicMessage, id=27, format=""):
+    ...
+
+
+@dataclass
+class ProgramDefaultAnimationSetFinished(BasicMessage, id=28, format=""):
+    ...
+
+
+@dataclass
+class Blink(BasicMessage, id=29, format=""):
+    ...
+
+
+@dataclass
+class BlinkAck(BasicMessage, id=30, format=""):
+    ...
+
+
+@dataclass
+class RequestDefaultAnimationSetColor(BasicMessage, id=31, format=""):
+    ...
+
+
+@dataclass
+class DefaultAnimationSetColor(BasicMessage, id=32, format=""):
+    ...
+
+
+@dataclass
+class RequestBatteryLevel(BasicMessage, id=33, format=""):
+    ...
+
+
+class BatteryState(IntEnum):
+    #: Discharging
+    Ok = 0
+    #: Battery level is low, user should recharge
+    Low = 1
+    #: Battery is charging
+    Charging = 2
+    #: Battery is full and on craddle
+    Done = 3
+    #: Attempted to charge, but something went wrong (eg, coil voltage is wrong
+    #: from sitting crooked)
+    BadCharging = 4
+    #: WEIRDNESS (eg charging but no coil voltage)
+    Error = 5
+
+
+@dataclass
+class BatteryLevel(BasicMessage, id=34, format="BB"):
+    percent: int
+    state: BatteryState
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.state = BatteryState(self.state)
+        return self
+
+
+@dataclass
+class RequestRssi(BasicMessage, id=35, format=""):
+    ...
+
+
+@dataclass
+class Rssi(BasicMessage, id=36, format=""):
+    ...
+
+
+@dataclass
+class Calibrate(BasicMessage, id=37, format=""):
+    ...
+
+
+@dataclass
+class CalibrateFace(BasicMessage, id=38, format=""):
+    ...
+
+
+@dataclass
+class NotifyUser(BasicMessage, id=39, format=""):
+    ...
+
+
+@dataclass
+class NotifyUserAck(BasicMessage, id=40, format=""):
+    ...
+
+
+@dataclass
+class TestHardware(BasicMessage, id=41, format=""):
+    ...
+
+
+@dataclass
+class TestLEDLoopback(BasicMessage, id=42, format=""):
+    ...
+
+
+@dataclass
+class LedLoopback(BasicMessage, id=43, format=""):
+    ...
+
+
+@dataclass
+class SetTopLevelState(BasicMessage, id=44, format=""):
+    ...
+
+
+@dataclass
+class ProgramDefaultParameters(BasicMessage, id=45, format=""):
+    ...
+
+
+@dataclass
+class ProgramDefaultParametersFinished(BasicMessage, id=46, format=""):
+    ...
+
+
+@dataclass
+class SetDesignAndColor(BasicMessage, id=47, format=""):
+    ...
+
+
+@dataclass
+class SetDesignAndColorAck(BasicMessage, id=48, format=""):
+    ...
+
+
+@dataclass
+class SetCurrentBehavior(BasicMessage, id=49, format=""):
+    ...
+
+
+@dataclass
+class SetCurrentBehaviorAck(BasicMessage, id=50, format=""):
+    ...
+
+
+@dataclass
+class SetName(BasicMessage, id=51, format=""):
+    ...
+
+
+@dataclass
+class SetNameAck(BasicMessage, id=52, format=""):
+    ...
+
+
+@dataclass
+class Sleep(BasicMessage, id=53, format=""):
+    ...
+
+
+@dataclass
+class ExitValidation(BasicMessage, id=54, format=""):
+    ...
+
+
+@dataclass
+class TransferInstantAnimationSet(BasicMessage, id=55, format=""):
+    ...
+
+
+@dataclass
+class TransferInstantAnimationSetAck(BasicMessage, id=56, format=""):
+    ...
+
+
+@dataclass
+class TransferInstantAnimationSetFinished(BasicMessage, id=57, format=""):
+    ...
+
+
+@dataclass
+class PlayInstantAnimation(BasicMessage, id=58, format=""):
+    ...
+
+
+@dataclass
+class StopAllAnimations(BasicMessage, id=59, format=""):
+    ...
+
+
+@dataclass
+class RequestTemperature(BasicMessage, id=60, format=""):
+    ...
+
+
+@dataclass
+class Temperature(BasicMessage, id=61, format=""):
+    ...
+
+
+@dataclass
+class EnableCharging(BasicMessage, id=62, format=""):
+    ...
+
+
+@dataclass
+class DisableCharging(BasicMessage, id=63, format=""):
+    ...
+
+
+@dataclass
+class Discharge(BasicMessage, id=64, format=""):
+    ...
+
+
+@dataclass
+class BlinkId(BasicMessage, id=65, format=""):
+    ...
+
+
+@dataclass
+class BlinkIdAck(BasicMessage, id=66, format=""):
+    ...
+
+
+@dataclass
+class TransferTest(BasicMessage, id=67, format=""):
+    ...
+
+
+@dataclass
+class TransferTestAck(BasicMessage, id=68, format=""):
+    ...
+
+
+@dataclass
+class TransferTestFinished(BasicMessage, id=69, format=""):
+    ...
+
+
+@dataclass
+class TestBulkSend(BasicMessage, id=70, format=""):
+    ...
+
+
+@dataclass
+class TestBulkReceive(BasicMessage, id=71, format=""):
+    ...
+
+
+@dataclass
+class SetAllLEDsToColor(BasicMessage, id=72, format=""):
+    ...
+
+
+@dataclass
+class AttractMode(BasicMessage, id=73, format=""):
+    ...
+
+
+@dataclass
+class PrintNormals(BasicMessage, id=74, format=""):
+    ...
+
+
+@dataclass
+class PrintA2DReadings(BasicMessage, id=75, format=""):
+    ...
+
+
+@dataclass
+class LightUpFace(BasicMessage, id=76, format=""):
+    ...
+
+
+@dataclass
+class SetLEDToColor(BasicMessage, id=77, format=""):
+    ...
+
+
+@dataclass
+class DebugAnimationController(BasicMessage, id=78, format=""):
+    ...
