@@ -9,7 +9,7 @@ from textual.widgets import (
     Header, Footer, Static,
 )
 
-from pixels_bleak import Pixel, RollState
+from pixels_bleak import scan_for_dice, ScanResult, RollState
 
 
 class Die(Static):
@@ -23,7 +23,7 @@ class Die(Static):
     roll_state = reactive(None)
     batt_level = reactive(0)
 
-    def update_from_result(self, sr):
+    def update_from_result(self, sr: ScanResult):
         for attr in dir(sr):
             if attr == 'name':
                 self.die_name = sr.name
@@ -40,11 +40,11 @@ class Die(Static):
 
     def render(self):
         if self.roll_state == RollState.OnFace:
-            return f"{self.die_name} (d{self.led_count}): {self.face + 1} @ {self.batt_level}%"
+            return f"{self.die_name} (d{self.led_count}): {self.face + 1} \U0001F50B{self.batt_level}%"
         elif self.roll_state == RollState.Crooked:
-            return f"{self.die_name} (d{self.led_count}): Crooked @ {self.batt_level}%"
+            return f"{self.die_name} (d{self.led_count}): Crooked \U0001F50B{self.batt_level}%"
         else:
-            return f"{self.die_name} (d{self.led_count}): Rolling @ {self.batt_level}%"
+            return f"{self.die_name} (d{self.led_count}): Rolling \U0001F50B{self.batt_level}%"
 
 
 class PixelsApp(App):
@@ -70,7 +70,7 @@ class PixelsApp(App):
         """
         Run the BLE Scanner and update the app data
         """
-        async for dev in Pixel.scan():
+        async for dev in scan_for_dice():
             cid = f"die_{dev.id:08X}"
             bag = self.get_child_by_id('dice')
             try:
@@ -83,9 +83,8 @@ class PixelsApp(App):
             else:
                 # Update the existing one
                 die.update_from_result(dev)
-                # FIXME: This fails if the child is already at the top
-                # if dev.roll_state == RollState.OnFace:
-                #     bag.move_child(die, before=0)
+                if dev.roll_state == RollState.OnFace and len(bag.children) > 1:
+                    bag.move_child(die, before=0)
 
     def action_quit(self):
         self.exit()
