@@ -49,6 +49,14 @@ async def main():
         print(f"{die=}")
         print(await die.who_are_you())
         print(await die.roll_state())
+        await die.blink(
+            count=3,
+            duration=500,
+            color=0xFFFFFF,
+            face_mask=0xFF,
+            fade=0,
+            loop=0,
+        )
         await asyncio.sleep(10)
 
 asyncio.run(main())

@@ -244,13 +244,18 @@ class ProgramDefaultAnimationSetFinished(BasicMessage, id=28, format=""):
 
 
 @dataclass
-class Blink(BasicMessage, id=29, format=""):
-    ...
+class Blink(BasicMessage, id=29, format="BHLLBB"):
+    count: int
+    duration: int
+    color: int  # TODO: RGB
+    face_mask: int  # TODO: Enum?
+    fade: int
+    loop: int  # TODO: bool/enum
 
 
 @dataclass
 class BlinkAck(BasicMessage, id=30, format=""):
-    ...
+    pass
 
 
 @dataclass

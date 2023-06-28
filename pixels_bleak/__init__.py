@@ -14,6 +14,7 @@ from .link import PixelLink, iter_msgs
 from .messages import (
     WhoAreYou, IAmADie,
     RequestRollState, RollState, RollState_State,
+    Blink, BlinkAck
 )
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
@@ -193,3 +194,6 @@ class Pixel(PixelLink):
 
     async def roll_state(self) -> RollState:
         return await self._send_and_wait(RequestRollState(), RollState)
+
+    async def blink(self, **params) -> None:
+        await self._send_and_wait(Blink(**params), BlinkAck)
