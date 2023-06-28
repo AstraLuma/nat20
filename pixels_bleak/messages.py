@@ -436,13 +436,14 @@ class Discharge(BasicMessage, id=64, format=""):
 
 
 @dataclass
-class BlinkId(BasicMessage, id=65, format=""):
-    ...
+class BlinkId(BasicMessage, id=65, format="BB"):
+    brightness: int
+    loop: int
 
 
 @dataclass
 class BlinkIdAck(BasicMessage, id=66, format=""):
-    ...
+    pass
 
 
 @dataclass

@@ -14,7 +14,7 @@ from .link import PixelLink, iter_msgs
 from .messages import (
     WhoAreYou, IAmADie,
     RequestRollState, RollState, RollState_State,
-    Blink, BlinkAck
+    Blink, BlinkAck, BlinkId, BlinkIdAck,
 )
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
@@ -197,3 +197,17 @@ class Pixel(PixelLink):
 
     async def blink(self, **params) -> None:
         await self._send_and_wait(Blink(**params), BlinkAck)
+
+    async def blink_id(self, brightness: int, loop: bool = False) -> None:
+        """
+        Blinks rainbow, suitable for die identification.
+
+        Args:
+            brightness: 0-255, 0 is off, 255 is max brightness
+            loop: Whether to loop or just run once
+
+        Note:
+            This only blocks until the die acknowledges the command, not until
+            the animation is finished.
+        """
+        await self._send_and_wait(BlinkId(brightness, int(loop)), BlinkIdAck)
