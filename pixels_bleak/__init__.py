@@ -176,6 +176,8 @@ class Pixel(PixelLink):
             else:
                 self._message_handlers[msgcls].append(func)
 
+            return func
+
         return _
 
     async def who_are_you(self) -> IAmADie:
