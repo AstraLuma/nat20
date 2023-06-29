@@ -17,6 +17,11 @@ DieSummary {
   margin: 1;
 }
 
+WorkingModal,
+ErrorModal {
+  align: center middle;
+}
+
 #modal {
   grid-size: 2;
   grid-gutter: 1 2;
@@ -33,6 +38,7 @@ DieSummary {
   height: 1fr;
   width: 1fr;
   content-align: center middle;
+  color: $text;
 }
 
 PercentageStatus,

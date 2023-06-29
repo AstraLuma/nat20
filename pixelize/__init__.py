@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 
 from textual import work, on
 from textual.app import App
@@ -16,6 +17,7 @@ from pixels_bleak import scan_for_dice, ScanResult
 from pixels_bleak.messages import RollState_State
 
 from .junk_drawer import WorkingModal
+from .die_details import DieDetailsScreen
 
 
 class DieSummary(Static):
@@ -67,16 +69,32 @@ class Die(Static):
 
     @on(Button.Pressed, '#connect')
     def on_connect(self):
-        def _switch(*_):
+        es = contextlib.AsyncExitStack()
+
+        async def connect():
+            print("connecting")
+            return await es.enter_async_context(self._scan_result.connect())
+
+        def switch(die):
             print("Open the dice now hal")
-            # self.app.push_screen()
-        self.app.push_screen(WorkingModal(
-            "Connecting", asyncio.sleep(5)), _switch)
+            print(die)
+            self.app.push_screen(DieDetailsScreen(die), disconnect)
+
+        def disconnect(*_):
+            print("disconnecting")
+            asyncio.create_task(es.aclose())
+
+        self.app.push_screen(
+            WorkingModal("Connecting", connect()),
+            switch
+        )
 
     def compose(self):
         """Create child widgets of a stopwatch."""
         yield Button("Connect", id="connect")
-        yield (DieSummary(id="info"))
+        yield (ds := DieSummary(id="info"))
+        if self._scan_result is not None:
+            ds.update_from_result(self._scan_result)
 
 
 class DiceBagScreen(Screen):
