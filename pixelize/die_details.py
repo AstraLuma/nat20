@@ -8,6 +8,8 @@ from pixels_bleak.messages import (
     BatteryLevel, BatteryState, RollState, RollState_State,
 )
 
+from .junk_drawer import Jumbo
+
 
 class DoubleLabel(Static):
     left = reactive("")
@@ -131,7 +133,7 @@ class DieDetailsScreen(Screen):
     def compose(self):
         yield Header()
         yield Footer()
-        yield Label(repr(self.die))
+        yield Jumbo(text=self.die.name)
         yield IdLabel(die_id=self.ad.id, id='id')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.face, id='face')

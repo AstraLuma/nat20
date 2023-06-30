@@ -1,9 +1,11 @@
 import asyncio
 
+import art
 from textual import on
 from textual.containers import Grid
+from textual.reactive import reactive
 from textual.screen import ModalScreen
-from textual.widgets import ProgressBar, Label, Button
+from textual.widgets import ProgressBar, Label, Button, Static
 
 
 class WorkingModal(ModalScreen):
@@ -50,3 +52,16 @@ class ErrorModal(ModalScreen):
     @on(Button.Pressed, '#continue')
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(self.error)
+
+
+class Jumbo(Static):
+    text = reactive("")
+    font = reactive(art.DEFAULT_FONT)
+
+    def __init__(self, /, text: str = "", font: str = art.DEFAULT_FONT, **kwargs):
+        super().__init__(**kwargs)
+        self.text = text
+        self.font = font
+
+    def render(self):
+        return art.text2art(self.text, font=self.font)

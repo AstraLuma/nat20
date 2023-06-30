@@ -14,6 +14,7 @@ bleak = "^0.20.2"
 
 [tool.poetry.group.tui.dependencies]
 textual = "^0.28.1"
+art = "^6.0"
 
 
 [tool.poetry.group.dev.dependencies]
