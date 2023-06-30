@@ -25,8 +25,8 @@ class DoubleLabel(Static):
 
 
 class BatteryLabel(Label):
-    state: BatteryState = reactive(BatteryState.Ok)
-    percent: int = reactive(0)
+    state = reactive(BatteryState.Ok)
+    percent = reactive(0)
 
     DEFAULT_CSS = """
     BatteryLabel {
@@ -54,8 +54,8 @@ class BatteryLabel(Label):
 
 
 class FaceLabel(Label):
-    state: RollState_State = reactive(RollState_State.Unknown)
-    face: int = reactive(0)
+    state = reactive(RollState_State.Unknown)
+    face = reactive(0)
 
     DEFAULT_CSS = """
     FaceLabel {
@@ -76,7 +76,7 @@ class FaceLabel(Label):
 
 
 class IdLabel(Label):
-    die_id: int = reactive(0)
+    die_id = reactive(0)
 
     DEFAULT_CSS = """
     IdLabel {
@@ -106,7 +106,7 @@ class DieDetailsScreen(Screen):
         self.ad = ad
 
         self.die.handler(RollState)(self.update_state)
-        self.die.handler(BatteryState)(self.update_batt)
+        self.die.handler(BatteryLevel)(self.update_batt)
         self.inquire_die()
 
     @work(exclusive=True)
