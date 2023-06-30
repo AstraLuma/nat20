@@ -163,17 +163,21 @@ class Pixel(PixelLink):
     #: The textual name of the die.
     name: str
 
+    _expected_disconnect: bool = False
+
     def __init__(self, sr: ScanResult):
         self._device = sr._device
         self.name = sr.name
         self._client = bleak.BleakClient(
             sr._device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
-            disconnected_callback=self._on_disconnect,
+            disconnected_callback=lambda c: asyncio.create_task(
+                self._on_disconnect(c)),
         )
         super().__init__()
 
     async def __aenter__(self):
+        self._expected_disconnect = False
         await self._client.connect()
         await super().__aenter__()
         return self
@@ -181,15 +185,15 @@ class Pixel(PixelLink):
     async def __aexit__(self, *exc):
         await super().__aexit__(*exc)
         print("Disconnecting")
+        self._expected_disconnect = True
         await self._client.disconnect()
-        self._client = None
 
     async def _on_disconnect(self, client):
-        LOG.info("Disconnected from %r, reconnecting", client)
-        if self._client is not None:  # Don't reconnect if we're exiting
+        if not self._expected_disconnect:  # Don't reconnect if we're exiting
+            LOG.info("Disconnected from %r, reconnecting", client)
             await client.connect()
             # XXX: What if reconnect fails?
-            # XXX: Block requests until reconnect happens
+            # XXX: Block requests until reconnect happens?
 
     def __repr__(self):
         return f"<{type(self).__name__} {self.address} {self.name!r} is_connected={self.is_connected}>"
