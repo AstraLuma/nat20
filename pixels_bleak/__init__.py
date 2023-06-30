@@ -1,10 +1,11 @@
 import asyncio
+from collections.abc import AsyncIterable
 import dataclasses
 import datetime
 import enum
+import logging
 import struct
 from typing import Union
-from collections.abc import AsyncIterable
 
 import bleak
 
@@ -16,6 +17,8 @@ from .messages import (
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
 )
+
+LOG = logging.getLogger(__name__)
 
 # Since these are protocol definitions, I would prefer to use explicit numbers
 # in enums, but none of the first-party code does that.
@@ -131,6 +134,7 @@ class Pixel(PixelLink):
         self._client = bleak.BleakClient(
             device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
+            disconnected_callback=self._on_disconnect,
         )
         super().__init__()
 
@@ -143,6 +147,12 @@ class Pixel(PixelLink):
         await super().__aexit__(*exc)
         print("Disconnecting")
         await self._client.disconnect()
+        self._client = None
+
+    async def _on_disconnect(self, client):
+        LOG.info("Disconnected from %r, reconnecting", client)
+        if self._client is not None:  # Don't reconnect if we're exiting
+            await client.connect()
 
     def __repr__(self):
         return f"<{type(self).__name__} {self.address} is_connected={self.is_connected}>"
