@@ -46,7 +46,7 @@ class BatteryLabel(Label):
             case BatteryState.Low:
                 prefix = "\U0001FAAB"
             case BatteryState.Charging | BatteryState.Done:
-                prefix = "\U0001F5F2"
+                prefix = "\U000026A1"
             case BatteryState.BadCharging | BatteryState.Error:
                 prefix = "\U000026A0"
 
