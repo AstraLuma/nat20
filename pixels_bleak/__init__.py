@@ -16,6 +16,7 @@ from .messages import (
     WhoAreYou, IAmADie,
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
+    BatteryLevel, BatteryState,
 )
 
 LOG = logging.getLogger(__name__)
@@ -30,6 +31,16 @@ class ScanBattState(enum.IntEnum):
     """
     Ok = 0
     Charging = 1
+
+    def as_batterystate(self) -> BatteryState:
+        match self:
+            case ScanBattState.Ok:
+                return BatteryState.Ok
+            case ScanBattState.Charging:
+                return BatteryState.Charging
+            case _:
+                # Can't happen, but covering bases
+                return BatteryState.Error
 
 
 @dataclasses.dataclass
@@ -73,6 +84,26 @@ class ScanResult:
             batt_level=batt & 0x7F,
             id=id,
             firmware_timestamp=build,
+        )
+
+    def to_rollstate(self) -> 'RollState':
+        """
+        Repackages the rolling information.
+        """
+        return RollState(
+            state=self.roll_state,
+            face=self.face,
+        )
+
+    def to_batterylevel(self) -> 'BatteryLevel':
+        """
+        Repackages the battery information.
+
+        Note that due to data fidelity, the state can only be Ok or Charging.
+        """
+        return BatteryLevel(
+            state=self.batt_state.as_batterystate(),
+            percent=self.batt_level,
         )
 
     def connect(self) -> 'Pixel':
