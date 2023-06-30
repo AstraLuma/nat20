@@ -78,7 +78,9 @@ class Die(Static):
         def switch(die):
             print("Open the dice now hal")
             print(die)
-            self.app.push_screen(DieDetailsScreen(die), disconnect)
+            self.app.push_screen(
+                DieDetailsScreen(die, self._scan_result), disconnect
+            )
 
         def disconnect(*_):
             print("disconnecting")

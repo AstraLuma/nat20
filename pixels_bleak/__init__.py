@@ -81,7 +81,7 @@ class ScanResult:
 
         (Note: Might not actually make a connection.)
         """
-        return Pixel(self._device)
+        return Pixel(self)
 
 
 async def scan_for_dice() -> AsyncIterable[ScanResult]:
@@ -129,10 +129,14 @@ class Pixel(PixelLink):
     # so might as well make that part of the data model. And then users can
     # scan by name or ID or whatever.
 
-    def __init__(self, device: bleak.backends.device.BLEDevice):
-        self._device = device
+    #: The textual name of the die.
+    name: str
+
+    def __init__(self, sr: ScanResult):
+        self._device = sr._device
+        self.name = sr.name
         self._client = bleak.BleakClient(
-            device,
+            sr._device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
             disconnected_callback=self._on_disconnect,
         )
@@ -153,9 +157,11 @@ class Pixel(PixelLink):
         LOG.info("Disconnected from %r, reconnecting", client)
         if self._client is not None:  # Don't reconnect if we're exiting
             await client.connect()
+            # XXX: What if reconnect fails?
+            # XXX: Block requests until reconnect happens
 
     def __repr__(self):
-        return f"<{type(self).__name__} {self.address} is_connected={self.is_connected}>"
+        return f"<{type(self).__name__} {self.address} {self.name!r} is_connected={self.is_connected}>"
 
     @property
     def address(self) -> str:

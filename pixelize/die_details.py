@@ -26,6 +26,17 @@ class BatteryLabel(Label):
     state: BatteryState = reactive(BatteryState.Ok)
     percent: int = reactive(0)
 
+    DEFAULT_CSS = """
+    BatteryLabel {
+        width: 6;
+    }
+    """
+
+    def __init__(self, /, state: BatteryState = BatteryState.Ok, percent: int = 0, **kwargs):
+        super().__init__(**kwargs)
+        self.state = state
+        self.percent = percent
+
     def render(self):
         match self.state:
             case BatteryState.Ok:
@@ -50,6 +61,11 @@ class FaceLabel(Label):
     }
     """
 
+    def __init__(self, /, state: RollState_State = RollState_State.Unknown, face: int = 0, **kwargs):
+        super().__init__(**kwargs)
+        self.state = state
+        self.face = face
+
     def render(self):
         if self.state == RollState_State.OnFace:
             return str(self.face + 1)
@@ -57,16 +73,35 @@ class FaceLabel(Label):
             return self.state.name
 
 
+class IdLabel(Label):
+    die_id: int = reactive(0)
+
+    DEFAULT_CSS = """
+    IdLabel {
+        width: 12;
+    }
+    """
+
+    def __init__(self, /, die_id: int = 0, **kwargs):
+        super().__init__(**kwargs)
+        self.die_id = die_id
+
+    def render(self):
+        return f"ID: {self.die_id:06X}"
+
+
 class DieDetailsScreen(Screen):
     die: pixels_bleak.Pixel
+    ad: pixels_bleak.ScanResult
 
     BINDINGS = [
         ("d", "disconnect", "Disconnect"),
     ]
 
-    def __init__(self, die):
+    def __init__(self, die: pixels_bleak.Pixel, ad: pixels_bleak.ScanResult):
         super().__init__()
         self.die = die
+        self.ad = ad
 
         self.die.handler(RollState)(self.update_state)
         self.die.handler(BatteryState)(self.update_batt)
@@ -75,6 +110,7 @@ class DieDetailsScreen(Screen):
     @work(exclusive=True)
     async def inquire_die(self):
         info = await self.die.who_are_you()
+        self.get_child_by_id('id').die_id = info.pixel_id
         self.get_child_by_id('face').state = info.roll_state
         self.get_child_by_id('face').face = info.roll_face
         self.get_child_by_id('batt').state = info.battery_state
@@ -96,8 +132,9 @@ class DieDetailsScreen(Screen):
         yield Header()
         yield Footer()
         yield Label(repr(self.die))
-        yield BatteryLabel(id='batt')
-        yield FaceLabel(id='face')
+        yield IdLabel(die_id=self.ad.id, id='id')
+        yield BatteryLabel(percent=self.ad.batt_level, id='batt')
+        yield FaceLabel(state=self.ad.roll_state, face=self.ad.face, id='face')
         yield Button("Identify", id="ident")
 
     @on(Button.Pressed, '#ident')

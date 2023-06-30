@@ -73,6 +73,24 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
 
         return self
 
+    def to_rollstate(self) -> 'RollState':
+        """
+        Repackages the rolling information.
+        """
+        return RollState(
+            state=self.roll_state,
+            face=self.roll_face,
+        )
+
+    def to_batterylevel(self) -> 'BatteryLevel':
+        """
+        Repackages the battery information.
+        """
+        return BatteryLevel(
+            state=self.battery_state,
+            percent=self.battery_percent,
+        )
+
 
 @dataclass
 class RollState(BasicMessage, id=3, format="BB"):
