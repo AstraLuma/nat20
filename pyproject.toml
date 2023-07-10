@@ -19,6 +19,9 @@ art = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 textual = {extras = ["dev"], version = "^0.28.1"}
+sphinx = "^6.0.0"
+sphinx-autobuild = "^2021.3.14"
+sphinx-rtd-theme = "^1.2.2"
 
 [build-system]
 requires = ["poetry-core"]
