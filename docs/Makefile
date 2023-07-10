@@ -9,7 +9,7 @@ SOURCEDIR     = .
 BUILDDIR      = _build
 
 requirements.txt:
-	poetry export --with=dev > "$@"
+	poetry export --with=docs > "$@"
 
 # Put it first so that "make" without argument is like "make help".
 help:
