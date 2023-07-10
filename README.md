@@ -1,4 +1,4 @@
-# pixels-bleak
+# nat20
 
 A Pixel dice access module based on bleak.
 

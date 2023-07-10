@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "pixels-bleak"
+name = "nat20"
 version = "0.1.0"
 description = "Access Pixels dice with async and bleak"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "GPL-3.0"
 readme = "README.md"
-packages = [{include = "pixels_bleak"}]
+packages = [{include = "nat20"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"

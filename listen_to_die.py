@@ -1,7 +1,7 @@
 import asyncio
 import logging.config
 
-from pixels_bleak import scan_for_dice
+from nat20 import scan_for_dice
 
 logging.config.dictConfig({
     'version': 1,
@@ -25,7 +25,7 @@ logging.config.dictConfig({
             'level': 'INFO',
             'propagate': False
         },
-        'pixels_bleak': {
+        'nat20': {
             'handlers': ['default'],
             'level': 'DEBUG',
             'propagate': False

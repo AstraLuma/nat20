@@ -13,8 +13,8 @@ from textual.widgets import (
     Header, Footer, Static, Button,
 )
 
-from pixels_bleak import scan_for_dice, ScanResult
-from pixels_bleak.messages import RollState_State
+from nat20 import scan_for_dice, ScanResult
+from nat20.messages import RollState_State
 
 from .junk_drawer import WorkingModal
 from .die_details import DieDetailsScreen

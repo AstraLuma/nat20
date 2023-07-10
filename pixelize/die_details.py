@@ -2,9 +2,9 @@ from textual import on, work
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Static, Header, Footer, Label, Button
-import pixels_bleak
+import nat20
 
-from pixels_bleak.messages import (
+from nat20.messages import (
     BatteryLevel, BatteryState, RollState, RollState_State,
 )
 
@@ -93,14 +93,14 @@ class IdLabel(Label):
 
 
 class DieDetailsScreen(Screen):
-    die: pixels_bleak.Pixel
-    ad: pixels_bleak.ScanResult
+    die: nat20.Pixel
+    ad: nat20.ScanResult
 
     BINDINGS = [
         ("d", "disconnect", "Disconnect"),
     ]
 
-    def __init__(self, die: pixels_bleak.Pixel, ad: pixels_bleak.ScanResult):
+    def __init__(self, die: nat20.Pixel, ad: nat20.ScanResult):
         super().__init__()
         self.die = die
         self.ad = ad

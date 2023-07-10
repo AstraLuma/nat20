@@ -1,6 +1,6 @@
 import asyncio
 
-from pixels_bleak import Pixel
+from nat20 import Pixel
 
 
 async def main():
