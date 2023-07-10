@@ -231,7 +231,7 @@ class Pixel(PixelLink):
     @property
     def address(self) -> str:
         """
-        The MAC address (macOS: UUID) of the die.
+        The MAC address (UUID on macOS) of the die.
         """
         return self._client.address
 
