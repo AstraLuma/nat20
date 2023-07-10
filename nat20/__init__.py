@@ -1,3 +1,14 @@
+"""
+Primary interface to Pixels dice.
+
+::
+
+    async for scan in scan_for_dice():
+        break
+
+    async with scan.connect() as die:
+        die.blink_id(0x80)
+"""
 import asyncio
 from collections.abc import AsyncIterable
 import dataclasses
@@ -5,12 +16,13 @@ import datetime
 import enum
 import logging
 import struct
+from types import EllipsisType
 from typing import Union
 
 import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
-from .link import PixelLink, iter_msgs
+from .link import PixelLink, iter_msgs, Message
 # Also, import messages so they get defined
 from .messages import (
     WhoAreYou, IAmADie,
@@ -29,10 +41,18 @@ class ScanBattState(enum.IntEnum):
     """
     The charge state of the battery.
     """
+    #: The battery is discharging
     Ok = 0
+    #: The battery is charging
     Charging = 1
 
     def as_batterystate(self) -> BatteryState:
+        """
+        Repackage as a :class:`BatteryState`.
+
+        Note that due to data fidelity, the state can only be
+        :attr:`.BatteryState.Ok` or :attr:`.BatteryState.Charging`.
+        """
         match self:
             case ScanBattState.Ok:
                 return BatteryState.Ok
@@ -99,7 +119,8 @@ class ScanResult:
         """
         Repackages the battery information.
 
-        Note that due to data fidelity, the state can only be Ok or Charging.
+        Note that due to data fidelity, the state can only be
+        :attr:`.BatteryState.Ok` or :attr:`.BatteryState.Charging`.
         """
         return BatteryLevel(
             state=self.batt_state.as_batterystate(),
@@ -109,17 +130,15 @@ class ScanResult:
     def connect(self) -> 'Pixel':
         """
         Constructs a full Pixel class for this die.
-
-        (Note: Might not actually make a connection.)
         """
         return Pixel(self)
 
 
 async def scan_for_dice() -> AsyncIterable[ScanResult]:
     """
-    Search for dice.
+    Search for dice. Will scan forever as long as the iterator is live.
 
-    Will scan forever as long as the iterator is live.
+    For timeouts, :func:`asyncio.timeout` might be helpful.
     """
     q = asyncio.Queue()
 
@@ -166,6 +185,11 @@ class Pixel(PixelLink):
     _expected_disconnect: bool = False
 
     def __init__(self, sr: ScanResult):
+        """
+        Use :meth:`ScanResult.connect` instead.
+
+        :meta private:
+        """
         self._device = sr._device
         self.name = sr.name
         self._client = bleak.BleakClient(
@@ -177,12 +201,18 @@ class Pixel(PixelLink):
         super().__init__()
 
     async def __aenter__(self):
+        """
+        Connect to die
+        """
         self._expected_disconnect = False
         await self._client.connect()
         await super().__aenter__()
         return self
 
     async def __aexit__(self, *exc):
+        """
+        Disconnect from die
+        """
         await super().__aexit__(*exc)
         print("Disconnecting")
         self._expected_disconnect = True
@@ -212,12 +242,15 @@ class Pixel(PixelLink):
         """
         return self._client.is_connected
 
-    def handler(self, msgcls: Union[type(...), type]):
+    def handler(self, msgcls: Union[EllipsisType, type[Message]]):
         """
         Register to receive notifcations of events.
 
-        @Pixel.register(RollState)
-        def foobar
+        ::
+
+            @die.handler(RollState)
+            def foobar(msg):
+                ...
         """
         # FIXME: Correctly handle methods?
         def _(func):
@@ -238,6 +271,11 @@ class Pixel(PixelLink):
         return await self._send_and_wait(WhoAreYou(), IAmADie)
 
     async def what_do_you_want(self):
+        """
+        Companion to :meth:`.who_are_you`
+
+        :meta private:
+        """
         return (
             "I'd like to live just long enough to be there when they cut off "
             "your head and stick it on a pike as a warning to the next ten "
@@ -246,6 +284,9 @@ class Pixel(PixelLink):
         )
 
     async def roll_state(self) -> RollState:
+        """
+        Request the current roll state.
+        """
         return await self._send_and_wait(RequestRollState(), RollState)
 
     async def blink(self, **params) -> None:

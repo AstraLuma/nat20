@@ -9,7 +9,7 @@ import inspect
 import logging
 import struct
 import sys
-from typing import Optional, Self, Iterable
+from typing import Callable, Optional, Self, Iterable
 
 import bleak
 
@@ -22,13 +22,18 @@ LOG = logging.getLogger(__name__)
 _messages = {}
 
 
-def iter_msgs() -> Iterable[type]:
+def iter_msgs() -> Iterable[type['Message']]:
+    """
+    List all known messages.
+    """
     yield from _messages.values()
 
 
 def msgid(msg) -> Optional[int]:
     """
     Gets the ID of the given message.
+
+    Returns :const:`None` if the message doesn't have one.
     """
     return msg._Message__id
 
@@ -43,14 +48,23 @@ class Message(abc.ABC):
 
     Pass :const:`None` as the ID if this should not be registered
     as a message (eg, is abstract).
+
+    Args:
+        id (int|None): The message ID or None.
     """
     @classmethod
     @abc.abstractmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
+        """
+        Construct an instance from a message blob.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
     def __struct_pack__(self) -> bytes:
+        """
+        Turn this message back into a blob.
+        """
         raise NotImplementedError
 
     def __init_subclass__(cls, /, id: int, **kwargs):
@@ -65,11 +79,17 @@ class BasicMessage(Message, id=None):
     Provides a helpful basic version of :class:`Message`
     for standard use cases.
 
+    ::
+
         @dataclass
         class Spam(BasicMessage, id=42, format='i'):
            eggs: int
 
-    Subclasses must also be a :module:`dataclass <dataclasses>`.
+    Subclasses must also be a :mod:`dataclass <dataclasses>`.
+
+    Args:
+        id (int|None): The message ID, or None
+        format (str): The format in :mod:`struct` form.
     """
     def __init_subclass__(cls, /, format: str, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -119,10 +139,14 @@ class PixelLink:
     # sounds untrue with network latency and asynchronous weirdness.
 
     #: Handlers waiting for a one-time response
+    #:
+    #: :meta public:
     _wait_queue: dict[type, list[asyncio.Future]]
 
     #: Event receivers
-    _message_handlers: dict[type, list]
+    #:
+    #: :meta public:
+    _message_handlers: dict[type, list[Callable[[Message], None]]]
 
     def __init__(self):
         self._wait_queue = collections.defaultdict(list)
@@ -146,6 +170,11 @@ class PixelLink:
         await self._client.stop_notify(CHARI_NOTIFY)
 
     async def _recv_notify(self, _, packet: bytearray):
+        """
+        Callback for bleak.
+
+        :meta private:
+        """
         msgid, blob = packet[0], packet[1:]
         try:
             msgcls = _messages[msgid]
@@ -162,6 +191,8 @@ class PixelLink:
     def _dispatch(self, message: Message):
         """
         Calls the handlers of a message & performs maintenance.
+
+        :meta private:
         """
         LOG.debug("Dispatching %r", message)
         msgcls = type(message)
@@ -175,26 +206,32 @@ class PixelLink:
     async def _send(self, message: Message):
         """
         Send a message to the connected device
+
+        :meta public:
         """
         blob = bytes([msgid(message)]) + message.__struct_pack__()
         await self._client.write_gatt_char(CHARI_WRITE, blob)
 
-    async def _wait(self, msgcls: type) -> Message:
+    async def _wait(self, msgcls: type[Message]) -> Message:
         """
         Waits for a given message.
 
         Note that if you want to send and receive a response, you should use
         :meth:`_send_and_wait`, it has better async properties.
+
+        :meta public:
         """
         fut = asyncio.get_event_loop().create_future()
         self._wait_queue[msgcls].append(fut)
         return await fut
 
-    async def _send_and_wait(self, msg: Message, respcls: type) -> Message:
+    async def _send_and_wait(self, msg: Message, respcls: type[Message]) -> Message:
         """
         Sends a message and waits for the response.
 
         Returns the response.
+
+        :meta public
         """
         fut = asyncio.get_event_loop().create_future()
         self._wait_queue[respcls].append(fut)

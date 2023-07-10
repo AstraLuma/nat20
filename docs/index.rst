@@ -6,6 +6,8 @@ nat20: Access to Pixel Bluetooth Dice
    :caption: Contents:
 
    reference/index
+   reference/messages
+   reference/lowlevel
 
 
 

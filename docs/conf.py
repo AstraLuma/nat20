@@ -18,6 +18,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
+    # 'sphinxcontrib.prettyspecialmethods',
 ]
 
 templates_path = ['_templates']
@@ -34,4 +36,12 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'bleak': ('https://bleak.readthedocs.io/en/latest/', None),
     # Textual
+}
+
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'special-members': ', '.join([
+        '__aenter__', '__aexit__',
+    ]),
 }

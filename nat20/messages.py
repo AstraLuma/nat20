@@ -26,6 +26,7 @@ class RollState_State(IntEnum):
     """
     The current motion of the die.
     """
+    #:
     Unknown = 0
     #: The die is sitting flat and is not moving
     OnFace = 1
@@ -40,27 +41,45 @@ class RollState_State(IntEnum):
 
 @dataclass
 class NoneMessage(BasicMessage, id=0, format=""):
-    pass
+    """
+    Filler for message type 0.
+    """
 
 
 @dataclass
 class WhoAreYou(BasicMessage, id=1, format=""):
-    pass
+    """
+    Request some basic information.
+
+    Die replies with :class:`IAmADie`.
+    """
 
 
 @dataclass
 class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
+    """
+    A bunch of general info.
+
+    Reply to :class:`WhoAreYou`
+    """
+    #: Number of LEDs
     led_count: int
     design_and_color: int  # TODO: enum
     data_set_hash: int
+    #: The factory-assigned die ID
     pixel_id: int
     available_flash: int
-    build_timestamp: int  # TODO: datetime
+    #: Timestamp of when the firmware was built.
+    build_timestamp: datetime.datetime
 
+    #: Current roll state
     roll_state: RollState_State
+    #: Current face that's up, starting at 0. Validity depends on :attr:`roll_state`.
     roll_face: int
 
+    #: Current battery level as a percent
     battery_percent: int
+    #: Current battery percent
     battery_state: BatteryState
 
     @classmethod
@@ -94,7 +113,15 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
 
 @dataclass
 class RollState(BasicMessage, id=3, format="BB"):
+    """
+    The current motion.
+
+    Broadcast on changes (see :meth:`.Pixel.handler()`) and is a reply to
+    :class:`RequestRollState`.
+    """
+    #: The current motion
     state: RollState_State
+    #: The upright face (starting at 0). Validity depends on :attr:`roll_state`.
     face: int
 
     @classmethod
@@ -233,7 +260,11 @@ class RemoteAction(BasicMessage, id=22, format="H"):
 
 @dataclass
 class RequestRollState(BasicMessage, id=23, format=""):
-    pass
+    """
+    Request the current roll state.
+
+    Replied with :class:`RollState`.
+    """
 
 
 @dataclass
@@ -263,6 +294,11 @@ class ProgramDefaultAnimationSetFinished(BasicMessage, id=28, format=""):
 
 @dataclass
 class Blink(BasicMessage, id=29, format="BHLLBB"):
+    """
+    Do a custom blink.
+
+    Replied with :class:`BlinkAck`
+    """
     count: int
     duration: int
     color: int  # TODO: RGB
@@ -273,7 +309,9 @@ class Blink(BasicMessage, id=29, format="BHLLBB"):
 
 @dataclass
 class BlinkAck(BasicMessage, id=30, format=""):
-    pass
+    """
+    Reply to :class:`Blink`.
+    """
 
 
 @dataclass
@@ -288,12 +326,24 @@ class DefaultAnimationSetColor(BasicMessage, id=32, format=""):
 
 @dataclass
 class RequestBatteryLevel(BasicMessage, id=33, format=""):
-    ...
+    """
+    Request the current battery.
+
+    Replies with :class:`BatteryLevel`.
+    """
 
 
 @dataclass
 class BatteryLevel(BasicMessage, id=34, format="BB"):
+    """
+    Current state of the battery.
+
+    Broadcast on changes (see :meth:`.Pixel.handler`) and reply to 
+    :class:`RequestBatteryLevel`.
+    """
+    #: The current level of the battery, as a percent
     percent: int
+    #: The current charge state
     state: BatteryState
 
     @classmethod
