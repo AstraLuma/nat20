@@ -27,6 +27,11 @@ sphinx-autobuild = "^2021.3.14"
 sphinx-rtd-theme = "^1.2.2"
 # sphinxcontrib-prettyspecialmethods = "^0.1.0"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
