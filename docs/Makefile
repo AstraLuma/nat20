@@ -8,6 +8,9 @@ SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = .
 BUILDDIR      = _build
 
+requirements.txt:
+	poetry export --with=dev > "$@"
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	poetry run @$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
