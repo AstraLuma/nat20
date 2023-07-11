@@ -5,6 +5,8 @@ description = "Access Pixels dice with async and bleak"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "GPL-3.0"
 readme = "README.md"
+repository = "https://github.com/AstraLuma/nat20"
+documentation = "https://nat20.readthedocs.io/en/stable/"
 packages = [{include = "nat20"}]
 
 [tool.poetry.dependencies]
