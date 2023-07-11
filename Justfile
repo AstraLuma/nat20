@@ -13,3 +13,7 @@ test *ARGS:
 # Lints
 lint:
   poetry run flake8
+
+# Call the docs Makefile
+docs +TARGETS:
+  make -C docs {{TARGETS}}
