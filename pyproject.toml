@@ -19,6 +19,7 @@ art = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 textual = {extras = ["dev"], version = "^0.28.1"}
+watchgha = "^2.1.1"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -31,6 +32,7 @@ sphinx-rtd-theme = "^1.2.2"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"
+flake8 = "^6.0.0"
 
 [build-system]
 requires = ["poetry-core"]
