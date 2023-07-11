@@ -226,7 +226,11 @@ class Pixel(PixelLink):
             # XXX: Block requests until reconnect happens?
 
     def __repr__(self):
-        return f"<{type(self).__name__} {self.address} {self.name!r} is_connected={self.is_connected}>"
+        return (
+            f"<{type(self).__name__} "
+            f"{self.address} {self.name!r} is_connected={self.is_connected}"
+            f">"
+        )
 
     @property
     def address(self) -> str:

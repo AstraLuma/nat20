@@ -63,7 +63,12 @@ class FaceLabel(Label):
     }
     """
 
-    def __init__(self, /, state: RollState_State = RollState_State.Unknown, face: int = 0, **kwargs):
+    def __init__(
+        self, /,
+            state: RollState_State = RollState_State.Unknown,
+            face: int = 0,
+            **kwargs
+    ):
         super().__init__(**kwargs)
         self.state = state
         self.face = face

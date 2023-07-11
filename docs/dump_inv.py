@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from sphinx.util.inventory import InventoryFile
 
 with open('./_build/html/objects.inv', 'rb') as invfile:

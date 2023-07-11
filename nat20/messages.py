@@ -338,7 +338,7 @@ class BatteryLevel(BasicMessage, id=34, format="BB"):
     """
     Current state of the battery.
 
-    Broadcast on changes (see :meth:`.Pixel.handler`) and reply to 
+    Broadcast on changes (see :meth:`.Pixel.handler`) and reply to
     :class:`RequestBatteryLevel`.
     """
     #: The current level of the battery, as a percent

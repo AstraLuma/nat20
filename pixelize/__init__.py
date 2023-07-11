@@ -48,7 +48,10 @@ class DieSummary(Static):
 
     def render(self):
         if self.roll_state == RollState_State.OnFace:
-            return f"{self.die_name} (d{self.led_count}): {self.face + 1} \U0001F50B{self.batt_level}%"
+            return (
+                f"{self.die_name} (d{self.led_count}): {self.face + 1} "
+                f"\U0001F50B{self.batt_level}%"
+            )
         elif self.roll_state == RollState_State.Crooked:
             return f"{self.die_name} (d{self.led_count}): Crooked \U0001F50B{self.batt_level}%"
         else:
