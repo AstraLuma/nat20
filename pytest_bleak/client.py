@@ -40,7 +40,7 @@ class DeviceFacade:
         }
         cls.characteristics = {
             sys.intern(bleak.uuids.normalize_uuid_str(c)): p
-            for c, p in srvs.items()
+            for c, p in chrs.items()
         }
 
     def __init__(self):
@@ -92,7 +92,6 @@ class Handled:
     def handle(self):
         if self._handle is None:
             self._handle = next(self._generator)
-            print(f"{self=} {self._handle=}")
         return self._handle
 
 
@@ -170,17 +169,12 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
 
         self.services = bleak.backends.service.BleakGATTServiceCollection()
         for sid, chars in self._impl.services.items():
-            print(f"{sid=} {chars=}")
             svc = BleakGATTServiceDummy(sid)
             self.services.add_service(svc)
             for cid in chars:
                 chr = BleakGATTCharacteristicDummy((svc, cid), self.mtu_size)
-                print(f"{chr=}")
                 svc.add_characteristic(chr)
                 self.services.add_characteristic(chr)
-
-        print(self._impl)
-        print(vars(self.services))
 
     @property
     def mtu_size(self):
@@ -206,24 +200,28 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
         return self.services
 
     async def read_gatt_char(self, char_specifier):
-        raise NotImplementedError()
+        cid = resolve_characteristic(char_specifier)
+        prop = self._impl.characteristics[cid]
+        return getattr(self._impl, prop)
 
     async def read_gatt_descriptor(self, handle):
         ...
         raise NotImplementedError()
 
     async def write_gatt_char(self, char_specifier, data, response):
-        ...
-        raise NotImplementedError()
+        cid = resolve_characteristic(char_specifier)
+        prop = self._impl.characteristics[cid]
+        setattr(self._impl, prop, data)
 
     async def write_gatt_descriptor(self, handle, data):
         ...
         raise NotImplementedError()
 
     async def start_notify(self, characteristic, callback):
-        ...
-        raise NotImplementedError()
+        cid = resolve_characteristic(characteristic)
+        prop = self._impl.characteristics[cid]
+        self._impl.set_notify(cid, lambda: callback(getattr(self._impl, prop)))
 
     async def stop_notify(self, char_specifier):
-        ...
-        raise NotImplementedError()
+        cid = resolve_characteristic(char_specifier)
+        self._impl.set_notify(cid, None)
