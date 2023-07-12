@@ -166,7 +166,6 @@ class PixelLink:
         """
         Does the bits necessary to stop receiving stuff.
         """
-        print("Unsubbing")
         await self._client.stop_notify(CHARI_NOTIFY)
 
     async def _recv_notify(self, _, packet: bytearray):

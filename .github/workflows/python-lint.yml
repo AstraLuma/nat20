@@ -5,6 +5,7 @@ name: flake8
 
 on:
   push:
+    branches: ["trunk"]
   pull_request:
     branches: ["trunk"]
 

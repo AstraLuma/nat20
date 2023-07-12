@@ -5,6 +5,7 @@ name: pytest
 
 on:
   push:
+    branches: ["trunk"]
   pull_request:
     branches: ["trunk"]
 

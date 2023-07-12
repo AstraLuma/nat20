@@ -1,5 +1,7 @@
-import pytest_bleak
+import asyncio
+from typing import ClassVar, Self
 
+import pytest_bleak
 import nat20.constants
 
 
@@ -33,4 +35,51 @@ class DieFacade(pytest_bleak.DeviceFacade):
         nat20.constants.CHARI_NOTIFY: 'msg_outbox',
     }
 
-    # TODO: Make actual properties
+    responses: ClassVar[dict[bytes, bytes]] = {}
+    outbox: asyncio.Queue
+
+    @classmethod
+    def with_responses(cls, responses) -> type[Self]:
+        """
+        Returns a version of the class that'll produce these responses.
+        """
+        return type(cls.__name__, (cls,), {'responses': responses})
+
+    def __init_subclass__(cls: type[Self]) -> None:
+        super().__init_subclass__()
+        for base in cls.mro():
+            if base is not object:
+                if hasattr(base, 'responses'):
+                    cls.responses = base.responses | cls.responses
+
+    def __init__(self):
+        super().__init__()
+
+        self.outbox = asyncio.Queue()
+
+    @property
+    def msg_inbox(self):
+        """
+        Messages from computer to die.
+        """
+        return b""
+
+    @msg_inbox.setter
+    def msg_inbox(self, data):
+        msgid = data[0:1]
+        if msgid in self.responses:
+            self.outbox.put_nowait(self.responses[msgid])
+            self.notify('msg_outbox')
+        else:
+            raise ValueError(f"No response known for {data!r}")
+
+    @property
+    def msg_outbox(self):
+        """
+        Messages from die to computer
+        """
+        return self.outbox.get_nowait()
+
+    @msg_outbox.setter
+    def msg_outbox(self, value):
+        pass
