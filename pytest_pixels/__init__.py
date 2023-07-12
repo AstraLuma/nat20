@@ -1,4 +1,3 @@
-import asyncio
 from typing import ClassVar, Self
 
 import pytest_bleak
@@ -36,7 +35,6 @@ class DieFacade(pytest_bleak.DeviceFacade):
     }
 
     responses: ClassVar[dict[bytes, bytes]] = {}
-    outbox: asyncio.Queue
 
     @classmethod
     def with_responses(cls, responses) -> type[Self]:
@@ -52,11 +50,6 @@ class DieFacade(pytest_bleak.DeviceFacade):
                 if hasattr(base, 'responses'):
                     cls.responses = base.responses | cls.responses
 
-    def __init__(self):
-        super().__init__()
-
-        self.outbox = asyncio.Queue()
-
     @property
     def msg_inbox(self):
         """
@@ -68,8 +61,7 @@ class DieFacade(pytest_bleak.DeviceFacade):
     def msg_inbox(self, data):
         msgid = data[0:1]
         if msgid in self.responses:
-            self.outbox.put_nowait(self.responses[msgid])
-            self.notify('msg_outbox')
+            self.notify('msg_outbox', self.responses[msgid])
         else:
             raise ValueError(f"No response known for {data!r}")
 
@@ -78,7 +70,7 @@ class DieFacade(pytest_bleak.DeviceFacade):
         """
         Messages from die to computer
         """
-        return self.outbox.get_nowait()
+        return b""
 
     @msg_outbox.setter
     def msg_outbox(self, value):

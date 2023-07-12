@@ -48,12 +48,13 @@ class DeviceFacade:
 
     _notification_callbacks: dict
 
-    def notify(self, prop: str):
+    def notify(self, prop: str, data: bytes):
         """
         Pushes a notification of a characteristic change into the BLE stack.
         """
         if prop in self._notification_callbacks:
-            self._notification_callbacks[prop]()
+            if self._notification_callbacks[prop] is not None:
+                self._notification_callbacks[prop](data)
 
     def set_notify(self, prop: str, callback):
         """
@@ -224,7 +225,7 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
     async def start_notify(self, characteristic, callback):
         cid = resolve_characteristic(characteristic)
         prop = self._impl.characteristics[cid]
-        self._impl.set_notify(prop, lambda: callback(getattr(self._impl, prop)))
+        self._impl.set_notify(prop, callback)
 
     async def stop_notify(self, char_specifier):
         cid = resolve_characteristic(char_specifier)
