@@ -1,6 +1,8 @@
+import itertools
 import sys
 from typing import Self, Union, ClassVar, Optional, Any
 import uuid
+from uuid import UUID
 
 import bleak.backends.client
 import bleak.backends.characteristic
@@ -82,15 +84,23 @@ def resolve_characteristic(
     return sys.intern(bleak.uuids.normalize_uuid_str(uid))
 
 
-class BleakGATTServiceDummy(bleak.backends.service.BleakGATTService):
+class Handled:
+    _handle: int | None = None
+    _generator = itertools.count(1)
+
+    @property
+    def handle(self):
+        if self._handle is None:
+            self._handle = next(self._generator)
+            print(f"{self=} {self._handle=}")
+        return self._handle
+
+
+class BleakGATTServiceDummy(Handled, bleak.backends.service.BleakGATTService):
     def __init__(self, obj):
         super().__init__(obj)
         self._uuid = obj
         self._characteristics = []
-
-    @property
-    def handle(self):
-        raise NotImplementedError()
 
     @property
     def uuid(self):
@@ -100,30 +110,27 @@ class BleakGATTServiceDummy(bleak.backends.service.BleakGATTService):
     def characteristics(self):
         return self._characteristics
 
-    def add_characteristic(self, characteristic: bleak.backends.characteristic.BleakGATTCharacteristic):
+    def add_characteristic(self,
+                           characteristic: bleak.backends.characteristic.BleakGATTCharacteristic):
         self._characteristics.append(characteristic)
 
 
-class BleakGATTCharacteristicDummy(bleak.backends.characteristic.BleakGATTCharacteristic):
+class BleakGATTCharacteristicDummy(Handled, bleak.backends.characteristic.BleakGATTCharacteristic):
     def __init__(self, obj: Any, max_write_without_response_size: int):
         super().__init__(obj, max_write_without_response_size)
-        self._service_uuid, self._uuid = obj
+        self._service, self._uuid = obj
 
     @property
     def service_uuid(self):
-        self._service_uuid
+        return self._service.uuid
 
     @property
     def service_handle(self):
-        raise NotImplementedError()
-
-    @property
-    def handle(self):
-        raise NotImplementedError()
+        return self._service.handle
 
     @property
     def uuid(self):
-        self._uuid
+        return self._uuid
 
     @property
     def properties(self):
@@ -131,6 +138,14 @@ class BleakGATTCharacteristicDummy(bleak.backends.characteristic.BleakGATTCharac
 
     @property
     def descriptors(self):
+        raise NotImplementedError()
+
+    def get_descriptor(
+        self, specifier: Union[int, str, UUID]
+    ) -> Union[bleak.backends.descriptor.BleakGATTDescriptor, None]:
+        raise NotImplementedError()
+
+    def add_descriptor(self, descriptor: bleak.backends.descriptor.BleakGATTDescriptor):
         raise NotImplementedError()
 
 
@@ -157,10 +172,12 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
         for sid, chars in self._impl.services.items():
             print(f"{sid=} {chars=}")
             svc = BleakGATTServiceDummy(sid)
-            for cid in chars:
-                chr = BleakGATTCharacteristicDummy((sid, cid), self.mtu_size)
-                svc.add_characteristic(chr)
             self.services.add_service(svc)
+            for cid in chars:
+                chr = BleakGATTCharacteristicDummy((svc, cid), self.mtu_size)
+                print(f"{chr=}")
+                svc.add_characteristic(chr)
+                self.services.add_characteristic(chr)
 
         print(self._impl)
         print(vars(self.services))
@@ -189,19 +206,24 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
         return self.services
 
     async def read_gatt_char(self, char_specifier):
-        ...
+        raise NotImplementedError()
 
     async def read_gatt_descriptor(self, handle):
         ...
+        raise NotImplementedError()
 
     async def write_gatt_char(self, char_specifier, data, response):
         ...
+        raise NotImplementedError()
 
     async def write_gatt_descriptor(self, handle, data):
         ...
+        raise NotImplementedError()
 
     async def start_notify(self, characteristic, callback):
         ...
+        raise NotImplementedError()
 
     async def stop_notify(self, char_specifier):
         ...
+        raise NotImplementedError()

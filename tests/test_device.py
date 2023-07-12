@@ -1,5 +1,4 @@
 import pytest
-from pytest_bleak.client import DeviceFacade
 
 from nat20 import scan_for_dice
 from pytest_pixels import DieFacade, dieresult
