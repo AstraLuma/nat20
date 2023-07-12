@@ -48,15 +48,18 @@ class DeviceFacade:
 
     _notification_callbacks: dict
 
-    def notify(self, characteristic, value):
+    def notify(self, prop: str):
         """
         Pushes a notification of a characteristic change into the BLE stack.
         """
+        if prop in self._notification_callbacks:
+            self._notification_callbacks[prop]()
 
-    def set_notify(self, characteristic, callback):
+    def set_notify(self, prop: str, callback):
         """
         Sets the notification callback for the given characteristic.
         """
+        self._notification_callbacks[prop] = callback
 
 
 def resolve_characteristic(
@@ -74,6 +77,7 @@ def resolve_characteristic(
     elif isinstance(char_specifier, int):
         # TODO: Look up handle
         uid = ...
+        raise NotImplementedError
     elif isinstance(char_specifier, uuid.UUID):
         uid = str(char_specifier)
     elif isinstance(char_specifier, str):
@@ -220,8 +224,9 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
     async def start_notify(self, characteristic, callback):
         cid = resolve_characteristic(characteristic)
         prop = self._impl.characteristics[cid]
-        self._impl.set_notify(cid, lambda: callback(getattr(self._impl, prop)))
+        self._impl.set_notify(prop, lambda: callback(getattr(self._impl, prop)))
 
     async def stop_notify(self, char_specifier):
         cid = resolve_characteristic(char_specifier)
-        self._impl.set_notify(cid, None)
+        prop = self._impl.characteristics[cid]
+        self._impl.set_notify(prop, None)

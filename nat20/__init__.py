@@ -214,7 +214,6 @@ class Pixel(PixelLink):
         Disconnect from die
         """
         await super().__aexit__(*exc)
-        print("Disconnecting")
         self._expected_disconnect = True
         await self._client.disconnect()
 
