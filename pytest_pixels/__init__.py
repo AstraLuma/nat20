@@ -33,4 +33,24 @@ class DieFacade(pytest_bleak.DeviceFacade):
         nat20.constants.CHARI_NOTIFY: 'msg_outbox',
     }
 
-    # TODO: Make actual properties
+    @property
+    def msg_inbox(self):
+        """
+        Messages from computer to die.
+        """
+        return b""
+
+    @msg_inbox.setter
+    def msg_inbox(self, data):
+        ...
+
+    @property
+    def msg_outbox(self):
+        """
+        Messages from die to computer
+        """
+        ...
+
+    @msg_outbox.setter
+    def msg_outbox(self, value):
+        pass

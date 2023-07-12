@@ -1,5 +1,5 @@
 import sys
-from typing import Self, Union, ClassVar
+from typing import Self, Union, ClassVar, Optional, Any
 import uuid
 
 import bleak.backends.client
@@ -24,7 +24,7 @@ class DeviceFacade:
         srvs = {}
         chrs = {}
         for base in cls.mro():
-            if base is object:
+            if base is not object:
                 if hasattr(base, 'services'):
                     # TODO: merge values
                     srvs = base.services | srvs
@@ -82,12 +82,92 @@ def resolve_characteristic(
     return sys.intern(bleak.uuids.normalize_uuid_str(uid))
 
 
+class BleakGATTServiceDummy(bleak.backends.service.BleakGATTService):
+    def __init__(self, obj):
+        super().__init__(obj)
+        self._uuid = obj
+        self._characteristics = []
+
+    @property
+    def handle(self):
+        raise NotImplementedError()
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @property
+    def characteristics(self):
+        return self._characteristics
+
+    def add_characteristic(self, characteristic: bleak.backends.characteristic.BleakGATTCharacteristic):
+        self._characteristics.append(characteristic)
+
+
+class BleakGATTCharacteristicDummy(bleak.backends.characteristic.BleakGATTCharacteristic):
+    def __init__(self, obj: Any, max_write_without_response_size: int):
+        super().__init__(obj, max_write_without_response_size)
+        self._service_uuid, self._uuid = obj
+
+    @property
+    def service_uuid(self):
+        self._service_uuid
+
+    @property
+    def service_handle(self):
+        raise NotImplementedError()
+
+    @property
+    def handle(self):
+        raise NotImplementedError()
+
+    @property
+    def uuid(self):
+        self._uuid
+
+    @property
+    def properties(self):
+        raise NotImplementedError()
+
+    @property
+    def descriptors(self):
+        raise NotImplementedError()
+
+
 class BleakClientDummy(bleak.backends.client.BaseBleakClient):
     _connected: bool = False
+    _paired: bool = False
+
+    _impl: DeviceFacade
+
+    def __init__(
+        self,
+        address_or_ble_device: Union[bleak.backends.device.BLEDevice, str],
+        services: Optional[set[str]] = None,
+        **kwargs,
+    ):
+        super().__init__(address_or_ble_device, **kwargs)
+        if not isinstance(address_or_ble_device, bleak.backends.device.BLEDevice):
+            raise TypeError("BleakClientDummy can't connect directly to an address.")
+
+        devcls, = address_or_ble_device.details
+        self._impl = devcls()
+
+        self.services = bleak.backends.service.BleakGATTServiceCollection()
+        for sid, chars in self._impl.services.items():
+            print(f"{sid=} {chars=}")
+            svc = BleakGATTServiceDummy(sid)
+            for cid in chars:
+                chr = BleakGATTCharacteristicDummy((sid, cid), self.mtu_size)
+                svc.add_characteristic(chr)
+            self.services.add_service(svc)
+
+        print(self._impl)
+        print(vars(self.services))
 
     @property
     def mtu_size(self):
-        ...
+        return 517
 
     async def connect(self):
         self._connected = True
@@ -96,17 +176,17 @@ class BleakClientDummy(bleak.backends.client.BaseBleakClient):
         self._connected = False
 
     async def pair(self):
-        ...
+        self._paired = True
 
     async def unpair(self):
-        ...
+        self._paired = False
 
     @property
     def is_connected(self):
         return self._connected
 
     async def get_services(self):
-        ...
+        return self.services
 
     async def read_gatt_char(self, char_specifier):
         ...
