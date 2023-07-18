@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 
 from textual import work, on
 from textual.app import App
