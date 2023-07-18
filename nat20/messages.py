@@ -3,7 +3,7 @@ import datetime
 from enum import IntEnum
 from typing import Self
 
-from .msglib import Message, BasicMessage
+from .msglib import Message, BasicMessage, EmptyMessage
 
 
 class BatteryState(IntEnum):
@@ -40,14 +40,14 @@ class RollState_State(IntEnum):
 
 
 @dataclass
-class NoneMessage(BasicMessage, id=0, format=""):
+class NoneMessage(EmptyMessage, id=0):
     """
     Filler for message type 0.
     """
 
 
 @dataclass
-class WhoAreYou(BasicMessage, id=1, format=""):
+class WhoAreYou(EmptyMessage, id=1):
     """
     Request some basic information.
 
@@ -259,7 +259,7 @@ class RemoteAction(BasicMessage, id=22, format="H"):
 
 
 @dataclass
-class RequestRollState(BasicMessage, id=23, format=""):
+class RequestRollState(EmptyMessage, id=23):
     """
     Request the current roll state.
 
@@ -308,7 +308,7 @@ class Blink(BasicMessage, id=29, format="BHLLBB"):
 
 
 @dataclass
-class BlinkAck(BasicMessage, id=30, format=""):
+class BlinkAck(EmptyMessage, id=30):
     """
     Reply to :class:`Blink`.
     """
@@ -325,7 +325,7 @@ class DefaultAnimationSetColor(BasicMessage, id=32, format=""):
 
 
 @dataclass
-class RequestBatteryLevel(BasicMessage, id=33, format=""):
+class RequestBatteryLevel(EmptyMessage, id=33):
     """
     Request the current battery.
 
@@ -510,7 +510,7 @@ class BlinkId(BasicMessage, id=65, format="BB"):
 
 
 @dataclass
-class BlinkIdAck(BasicMessage, id=66, format=""):
+class BlinkIdAck(EmptyMessage, id=66):
     pass
 
 
