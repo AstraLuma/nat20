@@ -17,3 +17,11 @@ lint:
 # Call the docs Makefile
 docs +TARGETS:
   make -C docs {{TARGETS}}
+
+# Run the TUI app
+pixelize:
+  poetry run textual run --dev pixelize:PixelsApp
+
+# Run the dev console for the TUI app
+devconsole:
+  poetry run textual console
