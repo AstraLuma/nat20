@@ -42,7 +42,7 @@ async def main():
     print(f"{sr=}")
     assert sr is not None
 
-    async with sr.hydrate() as die:
+    async with sr.hydrate().auto_reconnect() as die:
         @die.handler(...)
         def recv(msg):
             print(f"Received {msg}")

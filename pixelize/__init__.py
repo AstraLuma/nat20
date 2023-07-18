@@ -59,7 +59,7 @@ class DieSummary(Static):
 
 
 class Die(Static):
-    _scan_result = None
+    _scan_result: ScanResult
 
     def update_from_result(self, sr: ScanResult):
         self._scan_result = sr
@@ -72,11 +72,11 @@ class Die(Static):
 
     @on(Button.Pressed, '#connect')
     def on_connect(self):
-        es = contextlib.AsyncExitStack()
+        die = self._scan_result.hydrate()
 
         async def connect():
             print("connecting")
-            return await es.enter_async_context(self._scan_result.hydrate())
+            return await die.connect()
 
         def switch(die):
             print("Open the dice now hal")
@@ -87,7 +87,7 @@ class Die(Static):
 
         def disconnect(*_):
             print("disconnecting")
-            asyncio.create_task(es.aclose())
+            asyncio.create_task(die.disconnect())
 
         self.app.push_screen(
             WorkingModal("Connecting", connect()),
