@@ -76,7 +76,7 @@ class Die(Static):
 
         async def connect():
             print("connecting")
-            return await es.enter_async_context(self._scan_result.connect())
+            return await es.enter_async_context(self._scan_result.hydrate())
 
         def switch(die):
             print("Open the dice now hal")

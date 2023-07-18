@@ -127,7 +127,7 @@ class ScanResult:
             percent=self.batt_level,
         )
 
-    def connect(self) -> 'Pixel':
+    def hydrate(self) -> 'Pixel':
         """
         Constructs a full Pixel class for this die.
         """

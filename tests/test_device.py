@@ -18,7 +18,7 @@ async def test_who():
         else:
             assert False
 
-        async with sr.connect() as device:
+        async with sr.hydrate() as device:
             iam = await device.who_are_you()
 
     assert iam
