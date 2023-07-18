@@ -23,7 +23,8 @@ from typing import Self, Union
 import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
-from .link import PixelLink, iter_msgs, Message
+from .link import PixelLink
+from .msglib import iter_msgs, Message
 # Also, import messages so they get defined
 from .messages import (
     WhoAreYou, IAmADie,

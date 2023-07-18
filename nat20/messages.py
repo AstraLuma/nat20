@@ -3,7 +3,7 @@ import datetime
 from enum import IntEnum
 from typing import Self
 
-from .link import Message, BasicMessage
+from .msglib import Message, BasicMessage
 
 
 class BatteryState(IntEnum):
