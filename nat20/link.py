@@ -152,7 +152,7 @@ class PixelLink:
         self._wait_queue = collections.defaultdict(list)
         self._message_handlers = collections.defaultdict(list)
 
-    async def __aenter__(self):
+    async def connect(self):
         """
         Does the bits necessary to start receiving stuff.
         """
@@ -162,7 +162,7 @@ class PixelLink:
         # assert mtu >= 517, f"Insufficient MTU ({mtu} < 517)"
         await self._client.start_notify(CHARI_NOTIFY, self._recv_notify)
 
-    async def __aexit__(self, *exc):
+    async def disconnect(self, *exc):
         """
         Does the bits necessary to stop receiving stuff.
         """

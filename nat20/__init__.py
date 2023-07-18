@@ -10,14 +10,15 @@ Primary interface to Pixels dice.
         die.blink_id(0x80)
 """
 import asyncio
-from collections.abc import AsyncIterable
+from collections.abc import AsyncGenerator, AsyncIterable
+import contextlib
 import dataclasses
 import datetime
 import enum
 import logging
 import struct
 from types import EllipsisType
-from typing import Union
+from typing import Self, Union
 
 import bleak
 
@@ -127,7 +128,7 @@ class ScanResult:
             percent=self.batt_level,
         )
 
-    def connect(self) -> 'Pixel':
+    def hydrate(self) -> 'Pixel':
         """
         Constructs a full Pixel class for this die.
         """
@@ -200,22 +201,33 @@ class Pixel(PixelLink):
         )
         super().__init__()
 
-    async def __aenter__(self):
+    async def connect(self) -> Self:
         """
         Connect to die
         """
         self._expected_disconnect = False
         await self._client.connect()
-        await super().__aenter__()
+        await super().connect()
         return self
 
-    async def __aexit__(self, *exc):
+    async def disconnect(self, *exc):
         """
         Disconnect from die
         """
-        await super().__aexit__(*exc)
+        await super().disconnect(*exc)
         self._expected_disconnect = True
         await self._client.disconnect()
+
+    @contextlib.asynccontextmanager
+    async def auto_reconnect(self) -> AsyncGenerator[Self, None]:
+        """
+        Connect to the die and make an effort to automatically reconnect.
+        """
+        await self.connect()
+        try:
+            yield self
+        finally:
+            await self.disconnect()
 
     async def _on_disconnect(self, client):
         if not self._expected_disconnect:  # Don't reconnect if we're exiting
