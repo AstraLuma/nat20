@@ -98,6 +98,22 @@ class DieFlavor(Enum):
         }[self]
 
 
+class DesignAndColor(IntEnum):
+    Unknown = 0
+    Generic = 1
+    V3Orange = 2
+    V4BlackClear = 3
+    V4WhiteClear = 4
+    V5Grey = 5
+    V5White = 6
+    V5Black = 7
+    V5Gold = 8
+    OnyxBlack = 9
+    HematiteGrey = 10
+    MidnightGalaxy = 11
+    AuroraSky = 12
+
+
 @dataclass
 class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
@@ -107,7 +123,7 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
     #: Number of LEDs
     led_count: int
-    design_and_color: int  # TODO: enum
+    design_and_color: DesignAndColor
     data_set_hash: int
     #: The factory-assigned die ID
     pixel_id: int
@@ -144,6 +160,7 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
         self = super().__struct_unpack__(blob)
         self.roll_state = RollState_State(self.roll_state)
         self.battery_state = BatteryState(self.battery_state)
+        self.design_and_color = DesignAndColor(self.design_and_color)
         self.build_timestamp = datetime.datetime.fromtimestamp(
             self.build_timestamp, tz=datetime.timezone.utc)
 

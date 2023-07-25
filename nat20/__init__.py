@@ -25,7 +25,7 @@ import bleak
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
 from .messages import (
-    WhoAreYou, IAmADie, DieFlavor,
+    DesignAndColor, WhoAreYou, IAmADie, DieFlavor,
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     BatteryLevel, BatteryState,
@@ -71,7 +71,7 @@ class ScanResult:
     #: The number of LEDs and faces
     led_count: int
     #: The color and symbol set
-    design: int  # TODO: Enum
+    design_and_color: DesignAndColor
     #: The motion of the die
     roll_state: RollState_State
     #: The current face (starting at 0)
@@ -111,7 +111,7 @@ class ScanResult:
             _device=device,
             name=name,
             led_count=led_count,
-            design=design,
+            design_and_color=DesignAndColor(design),
             roll_state=RollState_State(roll_state),
             face=face,
             batt_state=ScanBattState(batt >> 7),
