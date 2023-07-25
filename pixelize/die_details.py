@@ -145,37 +145,27 @@ class DieDetailsScreen(Screen):
         self.die = die
         self.ad = ad
 
-        self.die.got_roll_state.handler(self.update_state, weak=True)
-        self.die.got_battery_level.handler(self.update_batt, weak=True)
+        self.die.data_changed.handler(self.update_data, weak=True)
         self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
     @work(exclusive=True)
     async def inquire_die(self):
-        info = await self.die.who_are_you()
-        self.get_child_by_id('id').die_id = info.pixel_id
-        self.get_child_by_id('face').state = info.roll_state
-        self.get_child_by_id('face').face = info.roll_face
-        self.get_child_by_id('batt').state = info.batt_state
-        self.get_child_by_id('batt').percent = info.batt_level
-        self.get_child_by_id('flavor').flavor = info.flavor
+        await self.die.who_are_you()  # Relies on firing the data_changed event
+
+    async def update_data(self, _, props):
+        print("Got updated data", props)
+        self.get_child_by_id('id').die_id = self.die.pixel_id
+        self.get_child_by_id('face').state = self.die.roll_state
+        self.get_child_by_id('face').face = self.die.roll_face
+        self.get_child_by_id('batt').state = self.die.batt_state
+        self.get_child_by_id('batt').percent = self.die.batt_level
+        self.get_child_by_id('flavor').flavor = self.die.flavor
 
     def on_disconnected(self, _):
         self.app.push_screen(
             WorkingModal("Reconnecting", self.die.connect()),
         )
-
-    def update_state(self, _, msg: RollState):
-        print(f"{msg=}")
-        lbl: FaceLabel = self.get_child_by_id('face')
-        lbl.state = msg.state
-        lbl.face = msg.face
-
-    def update_batt(self, _, msg: BatteryLevel):
-        print(f"{msg=}")
-        lbl: BatteryLabel = self.get_child_by_id('batt')
-        lbl.state = msg.state
-        lbl.percent = msg.percent
 
     def compose(self):
         yield Header()

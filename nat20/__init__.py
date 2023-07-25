@@ -220,6 +220,9 @@ class Pixel:
 
     got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been sent.")
     got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been sent.")
+    data_changed = aioevents.Event(
+        "(cl: set[str]) Any of the props changed, giving the set of which ones"
+    )
     disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
 
     @property
@@ -323,11 +326,13 @@ class Pixel:
     def _on_roll_state(self, msg: RollState):
         self.roll_state = msg.state
         self.roll_face = msg.face
+        self.data_changed.trigger({'roll_state', 'roll_face'})
         self.got_roll_state.trigger(msg)
 
     def _on_battery_level(self, msg: BatteryLevel):
         self.batt_state = msg.state
         self.batt_level = msg.level
+        self.data_changed.trigger({'batt_state', 'batt_level'})
         self.got_battery_level.trigger(msg)
 
     def __repr__(self):
@@ -356,10 +361,22 @@ class Pixel:
         Perform a basic info query
         """
         msg = await self._link.send_and_wait(WhoAreYou(), IAmADie)
+
         self.roll_state = msg.roll_state
         self.roll_face = msg.roll_face
         self.batt_state = msg.batt_state
         self.batt_level = msg.batt_level
+
+        # These ones shouldn't change, but we're going to include them anyway.
+        self.build_timestamp = msg.build_timestamp
+        self.design_and_color = msg.design_and_color
+        self.led_count = msg.led_count
+        self.pixel_id = msg.pixel_id
+
+        self.data_changed.trigger({
+            'roll_state', 'roll_face', 'batt_state', 'batt_level',
+            'build_timestamp', 'design_and_color', 'pixel_id',
+        })
         return msg
 
     async def what_do_you_want(self):
@@ -383,6 +400,7 @@ class Pixel:
         msg = await self._link.send_and_wait(RequestRollState(), RollState)
         self.roll_state = msg.state
         self.roll_face = msg.face
+        self.data_changed.trigger({'roll_state', 'roll_face'})
         return msg
 
     async def blink(self, **params) -> None:
