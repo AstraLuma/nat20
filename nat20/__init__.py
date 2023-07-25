@@ -25,7 +25,7 @@ import bleak
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
 from .messages import (
-    DesignAndColor, WhoAreYou, IAmADie, DieFlavor,
+    DesignAndColor, RequestBatteryLevel, WhoAreYou, IAmADie, DieFlavor,
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     BatteryLevel, BatteryState,
@@ -401,6 +401,16 @@ class Pixel:
         self.roll_state = msg.state
         self.roll_face = msg.face
         self.data_changed.trigger({'roll_state', 'roll_face'})
+        return msg
+
+    async def get_battery_level(self) -> BatteryLevel:
+        """
+        Request the current battery level.
+        """
+        msg = await self._link.send_and_wait(RequestBatteryLevel(), BatteryLevel)
+        self.batt_level = msg.level
+        self.batt_state = msg.state
+        self.data_changed.trigger({'batt_level', 'batt_state'})
         return msg
 
     async def blink(self, **params) -> None:
