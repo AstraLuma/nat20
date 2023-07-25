@@ -123,6 +123,7 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
     #: Number of LEDs
     led_count: int
+    #: The aesthetic design of the die
     design_and_color: DesignAndColor
     data_set_hash: int
     #: The factory-assigned die ID
@@ -137,9 +138,9 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     roll_face: int
 
     #: Current battery level as a percent
-    battery_percent: int
+    batt_level: int
     #: Current battery percent
-    battery_state: BatteryState
+    batt_state: BatteryState
 
     @property
     def flavor(self) -> DieFlavor:
@@ -159,7 +160,7 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     def __struct_unpack__(cls, blob: bytes) -> Self:
         self = super().__struct_unpack__(blob)
         self.roll_state = RollState_State(self.roll_state)
-        self.battery_state = BatteryState(self.battery_state)
+        self.batt_state = BatteryState(self.batt_state)
         self.design_and_color = DesignAndColor(self.design_and_color)
         self.build_timestamp = datetime.datetime.fromtimestamp(
             self.build_timestamp, tz=datetime.timezone.utc)
@@ -180,8 +181,8 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
         Repackages the battery information.
         """
         return BatteryLevel(
-            state=self.battery_state,
-            percent=self.battery_percent,
+            state=self.batt_state,
+            level=self.batt_level,
         )
 
 
@@ -416,7 +417,7 @@ class BatteryLevel(BasicMessage, id=34, format="BB"):
     :class:`RequestBatteryLevel`.
     """
     #: The current level of the battery, as a percent
-    percent: int
+    level: int
     #: The current charge state
     state: BatteryState
 

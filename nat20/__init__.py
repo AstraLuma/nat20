@@ -70,20 +70,20 @@ class ScanResult:
     name: str
     #: The number of LEDs and faces
     led_count: int
-    #: The color and symbol set
+    #: The aesthetic design of the die
     design_and_color: DesignAndColor
     #: The motion of the die
     roll_state: RollState_State
     #: The current face (starting at 0)
-    face: int
+    roll_face: int
     #: The charge state of the battery
     batt_state: ScanBattState
     #: The level of the battery, as a percent
     batt_level: int
     #: The unique ID of the die
-    id: int
+    pixel_id: int
     #: The build date of the firmware
-    firmware_timestamp: datetime.datetime
+    build_timestamp: datetime.datetime
 
     @property
     def flavor(self) -> DieFlavor:
@@ -113,11 +113,11 @@ class ScanResult:
             led_count=led_count,
             design_and_color=DesignAndColor(design),
             roll_state=RollState_State(roll_state),
-            face=face,
+            roll_face=face,
             batt_state=ScanBattState(batt >> 7),
             batt_level=batt & 0x7F,
-            id=id,
-            firmware_timestamp=build,
+            pixel_id=id,
+            build_timestamp=build,
         )
 
     def to_rollstate(self) -> 'RollState':
@@ -126,7 +126,7 @@ class ScanResult:
         """
         return RollState(
             state=self.roll_state,
-            face=self.face,
+            face=self.roll_face,
         )
 
     def to_batterylevel(self) -> 'BatteryLevel':
@@ -195,14 +195,67 @@ class Pixel:
 
     #: The textual name of the die.
     name: str
+    #: Number of LEDs
+    led_count: int
+    #: The aesthetic design of the die
+    design_and_color: DesignAndColor
+    #: The factory-assigned die ID
+    pixel_id: int
+    #: Timestamp of when the firmware was built.
+    build_timestamp: datetime.datetime
+
+    #: Current roll state
+    roll_state: RollState_State
+    #: Current face that's up, starting at 0. Validity depends on :attr:`roll_state`.
+    roll_face: int
+
+    #: Current battery level as a percent
+    batt_level: int
+    #: Current battery percent
+    batt_state: BatteryState
 
     _expected_disconnect: bool = False
 
     _link: PixelLink
 
-    got_roll_state = aioevents.Event("A new RollState has been sent.")
-    got_battery_state = aioevents.Event("A new BatteryState has been sent.")
-    disconnected = aioevents.Event("We've been unexpectedly disconnected from the die.")
+    got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been sent.")
+    got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been sent.")
+    disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
+
+    @property
+    def flavor(self) -> DieFlavor:
+        """
+        The kind of die this is, like D20 or Pipped D6
+        """
+        return DieFlavor._from_led_count(self.led_count)
+
+    @property
+    def face_count(self) -> int:
+        """
+        The total number of faces
+        """
+        return self.flavor.face_count
+
+    def to_rollstate(self) -> RollState:
+        """
+        Repackages the rolling information.
+        """
+        return RollState(
+            state=self.roll_state,
+            face=self.roll_face,
+        )
+
+    def to_batterylevel(self) -> BatteryLevel:
+        """
+        Repackages the battery information.
+
+        Note that updated information hasn't been received, the state can only
+        be :attr:`.BatteryState.Ok` or :attr:`.BatteryState.Charging`.
+        """
+        return BatteryLevel(
+            state=self.batt_state,
+            level=self.batt_level,
+        )
 
     def __init__(self, sr: ScanResult):
         """
@@ -210,8 +263,18 @@ class Pixel:
 
         :meta private:
         """
-        self._device = sr._device
         self.name = sr.name
+        self.led_count = sr.led_count
+        self.design_and_color = sr.design_and_color
+        self.pixel_id = sr.pixel_id
+        self.build_timestamp = sr.build_timestamp
+        self.roll_state = sr.roll_state
+        self.roll_face = sr.roll_face
+        self.batt_level = sr.batt_level
+        self.batt_state = sr.batt_state.as_batterystate()
+
+        self._device = sr._device
+
         self._link = PixelLink(bleak.BleakClient(
             sr._device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
@@ -220,7 +283,7 @@ class Pixel:
         ))
 
         self._link._message_handlers[RollState].append(self._on_roll_state)
-        self._link._message_handlers[BatteryState].append(self._on_battery_state)
+        self._link._message_handlers[BatteryLevel].append(self._on_battery_level)
 
     async def connect(self):
         """
@@ -258,10 +321,14 @@ class Pixel:
             self.disconnected.trigger()
 
     def _on_roll_state(self, msg: RollState):
+        self.roll_state = msg.state
+        self.roll_face = msg.face
         self.got_roll_state.trigger(msg)
 
-    def _on_battery_state(self, msg: BatteryState):
-        self.got_battery_state.trigger(msg)
+    def _on_battery_level(self, msg: BatteryLevel):
+        self.batt_state = msg.state
+        self.batt_level = msg.level
+        self.got_battery_level.trigger(msg)
 
     def __repr__(self):
         return (
@@ -304,7 +371,7 @@ class Pixel:
             "look up at your lifeless eyes and wave like this."
         )
 
-    async def roll_state(self) -> RollState:
+    async def get_roll_state(self) -> RollState:
         """
         Request the current roll state.
         """
