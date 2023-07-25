@@ -12,6 +12,8 @@ packages = [{include = "nat20"}]
 [tool.poetry.dependencies]
 python = "^3.11"
 bleak = "^0.20.2"
+typing-extensions = "^4.6.0"
+aioevents = "^0.2"
 
 
 [tool.poetry.group.tui.dependencies]

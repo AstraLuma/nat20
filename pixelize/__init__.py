@@ -75,7 +75,8 @@ class Die(Static):
 
         async def connect():
             print("connecting")
-            return await die.connect()
+            await die.connect()
+            return die
 
         def switch(die):
             print("Open the dice now hal")
