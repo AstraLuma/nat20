@@ -5,7 +5,7 @@ from textual.widgets import Static, Header, Footer, Label, Button
 import nat20
 
 from nat20.messages import (
-    BatteryLevel, BatteryState, DieFlavor, RollState, RollState_State,
+    BatteryState, DieFlavor, RollState_State,
 )
 
 from .junk_drawer import Jumbo, WorkingModal
