@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import datetime
-from enum import IntEnum
+from enum import Enum, IntEnum, auto
 from typing import Self
 
 from .msglib import Message, BasicMessage, EmptyMessage
@@ -55,6 +55,49 @@ class WhoAreYou(EmptyMessage, id=1):
     """
 
 
+class DieFlavor(Enum):
+    D4 = auto()
+    D6 = auto()
+    D6Pipped = auto()
+    D6Fudge = auto()
+    D8 = auto()
+    D10 = auto()
+    D12 = auto()
+    D20 = auto()
+
+    @staticmethod
+    def _from_led_count(leds: int) -> 'DieFlavor':
+        try:
+            return {
+                4: DieFlavor.D4,
+                6: DieFlavor.D6,
+                8: DieFlavor.D8,
+                10: DieFlavor.D10,
+                12: DieFlavor.D12,
+                20: DieFlavor.D20,
+                21: DieFlavor.D6Pipped,
+                # ???: DieFlavor.D6Fudge
+            }[leds]
+        except KeyError as exc:
+            raise ValueError("Unknown LED count: %i", leds) from exc
+
+    @property
+    def face_count(self) -> int:
+        """
+        Return the number of faces this flavor has.
+        """
+        return {
+            DieFlavor.D4: 4,
+            DieFlavor.D6: 6,
+            DieFlavor.D8: 8,
+            DieFlavor.D10: 10,
+            DieFlavor.D12: 12,
+            DieFlavor.D20: 20,
+            DieFlavor.D6Pipped: 6,
+            DieFlavor.D6Fudge: 6,
+        }[self]
+
+
 @dataclass
 class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
@@ -81,6 +124,20 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     battery_percent: int
     #: Current battery percent
     battery_state: BatteryState
+
+    @property
+    def flavor(self) -> DieFlavor:
+        """
+        The kind of die this is, like D20 or Pipped D6
+        """
+        return DieFlavor._from_led_count(self.led_count)
+
+    @property
+    def face_count(self) -> int:
+        """
+        The total number of faces
+        """
+        return self.flavor.face_count
 
     @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:

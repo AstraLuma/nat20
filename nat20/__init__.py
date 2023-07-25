@@ -25,7 +25,7 @@ import bleak
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
 from .messages import (
-    WhoAreYou, IAmADie,
+    WhoAreYou, IAmADie, DieFlavor,
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     BatteryLevel, BatteryState,
@@ -84,6 +84,20 @@ class ScanResult:
     id: int
     #: The build date of the firmware
     firmware_timestamp: datetime.datetime
+
+    @property
+    def flavor(self) -> DieFlavor:
+        """
+        The kind of die this is, like D20 or Pipped D6
+        """
+        return DieFlavor._from_led_count(self.led_count)
+
+    @property
+    def face_count(self) -> int:
+        """
+        The total number of faces
+        """
+        return self.flavor.face_count
 
     @classmethod
     def _construct(cls, device, name, mdata, sdata):

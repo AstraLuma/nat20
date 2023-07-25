@@ -5,7 +5,7 @@ from textual.widgets import Static, Header, Footer, Label, Button
 import nat20
 
 from nat20.messages import (
-    BatteryLevel, BatteryState, RollState, RollState_State,
+    BatteryLevel, BatteryState, DieFlavor, RollState, RollState_State,
 )
 
 from .junk_drawer import Jumbo, WorkingModal
@@ -97,6 +97,41 @@ class IdLabel(Label):
         return f"ID: {self.die_id:06X}"
 
 
+class FlavorLabel(Label):
+    flavor = reactive(DieFlavor.D20)
+
+    DEFAULT_CSS = """
+    FlavorLabel {
+        width: 12;
+    }
+    """
+
+    def __init__(self, /, flavor: DieFlavor = DieFlavor.D20, **kwargs):
+        super().__init__(**kwargs)
+        self.flavor = flavor
+
+    def render(self):
+        match self.flavor:
+            case DieFlavor.D4:
+                return "Flavor: D4"
+            case DieFlavor.D6:
+                return "Flavor: D6"
+            case DieFlavor.D6Pipped:
+                return "Flavor: D6 (Pipped)"
+            case DieFlavor.D6Fudge:
+                return "Flavor: Fudge"
+            case DieFlavor.D8:
+                return "Flavor: D8"
+            case DieFlavor.D10:
+                return "Flavor: D10"
+            case DieFlavor.D12:
+                return "Flavor: D12"
+            case DieFlavor.D20:
+                return "Flavor: D20"
+            case flavor:
+                return f"Flavor: {flavor}"
+
+
 class DieDetailsScreen(Screen):
     die: nat20.Pixel
     ad: nat20.ScanResult
@@ -123,6 +158,7 @@ class DieDetailsScreen(Screen):
         self.get_child_by_id('face').face = info.roll_face
         self.get_child_by_id('batt').state = info.battery_state
         self.get_child_by_id('batt').percent = info.battery_percent
+        self.get_child_by_id('flavor').flavor = info.flavor
 
     def on_disconnected(self, _):
         self.app.push_screen(
@@ -146,6 +182,7 @@ class DieDetailsScreen(Screen):
         yield Footer()
         yield Jumbo(text=self.die.name)
         yield IdLabel(die_id=self.ad.id, id='id')
+        yield FlavorLabel(flavor=self.ad.flavor, id='flavor')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.face, id='face')
         yield Button("Identify", id="ident")
