@@ -17,22 +17,19 @@ import datetime
 import enum
 import logging
 import struct
-from types import EllipsisType
-from typing import Self, Union
+from typing import Self
 
 import aioevents
 import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
-from .msglib import iter_msgs, Message
-# Also, import messages so they get defined
 from .messages import (
     WhoAreYou, IAmADie,
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     BatteryLevel, BatteryState,
-)
+)  # Also, import messages so they get defined
 
 LOG = logging.getLogger(__name__)
 
@@ -191,6 +188,7 @@ class Pixel:
 
     got_roll_state = aioevents.Event("A new RollState has been sent.")
     got_battery_state = aioevents.Event("A new BatteryState has been sent.")
+    disconnected = aioevents.Event("We've been unexpectedly disconnected from the die.")
 
     def __init__(self, sr: ScanResult):
         """
@@ -225,22 +223,25 @@ class Pixel:
         await self._link.disconnect()
 
     @contextlib.asynccontextmanager
-    async def auto_reconnect(self) -> AsyncGenerator[Self, None]:
+    async def connect_with_reconnect(self) -> AsyncGenerator[Self, None]:
         """
         Connect to the die and make an effort to automatically reconnect.
         """
+        @self.disconnected.handler
+        async def reconnect(_):
+            await self.connect()  # TODO: Forward error?
+
         await self.connect()
         try:
             yield self
         finally:
+            self.disconnected.remove(reconnect)
             await self.disconnect()
 
     async def _on_disconnect(self, client):
-        if not self._expected_disconnect:  # Don't reconnect if we're exiting
-            LOG.info("Disconnected from %r, reconnecting", client)
-            await client.connect()
-            # XXX: What if reconnect fails?
-            # XXX: Block requests until reconnect happens?
+        if not self._expected_disconnect:
+            LOG.info("Disconnected from %r", client)
+            self.disconnected.trigger()
 
     def _on_roll_state(self, msg: RollState):
         self.got_roll_state.trigger(msg)
@@ -269,28 +270,6 @@ class Pixel:
         """
         return self._link.is_connected
 
-    def handler(self, msgcls: Union[EllipsisType, type[Message]]):
-        """
-        Register to receive notifcations of events.
-
-        ::
-
-            @die.handler(RollState)
-            def foobar(msg):
-                ...
-        """
-        # FIXME: Correctly handle methods?
-        def _(func):
-            if msgcls is ...:
-                for cls in iter_msgs():
-                    self._link._message_handlers[cls].append(func)
-            else:
-                self._link._message_handlers[msgcls].append(func)
-
-            return func
-
-        return _
-
     async def who_are_you(self) -> IAmADie:
         """
         Perform a basic info query
@@ -303,6 +282,7 @@ class Pixel:
 
         :meta private:
         """
+        # Babylon 5, Vir Cotto to Mr Morden
         return (
             "I'd like to live just long enough to be there when they cut off "
             "your head and stick it on a pike as a warning to the next ten "

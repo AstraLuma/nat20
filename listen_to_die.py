@@ -43,9 +43,10 @@ async def main():
     print(f"{sr=}")
     assert sr is not None
 
-    async with sr.hydrate().auto_reconnect() as die:
-        @die.handler(...)
-        def recv(msg):
+    async with sr.hydrate().connect_with_reconnect() as die:
+        @die.got_roll_state.handler
+        @die.got_battery_state.handler
+        def recv(_, msg):
             print(f"Received {msg}")
         print(f"{die=}")
         print(await die.who_are_you())

@@ -8,7 +8,7 @@ from nat20.messages import (
     BatteryLevel, BatteryState, RollState, RollState_State,
 )
 
-from .junk_drawer import Jumbo
+from .junk_drawer import Jumbo, WorkingModal
 
 
 class DoubleLabel(Static):
@@ -112,6 +112,7 @@ class DieDetailsScreen(Screen):
 
         self.die.got_roll_state.handler(self.update_state, weak=True)
         self.die.got_battery_state.handler(self.update_batt, weak=True)
+        self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
     @work(exclusive=True)
@@ -122,6 +123,11 @@ class DieDetailsScreen(Screen):
         self.get_child_by_id('face').face = info.roll_face
         self.get_child_by_id('batt').state = info.battery_state
         self.get_child_by_id('batt').percent = info.battery_percent
+
+    def on_disconnected(self, _):
+        self.app.push_screen(
+            WorkingModal("Reconnecting", self.die.connect()),
+        )
 
     def update_state(self, _, msg: RollState):
         print(f"{msg=}")
