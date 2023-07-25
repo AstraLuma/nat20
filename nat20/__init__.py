@@ -355,7 +355,12 @@ class Pixel:
         """
         Perform a basic info query
         """
-        return await self._link.send_and_wait(WhoAreYou(), IAmADie)
+        msg = await self._link.send_and_wait(WhoAreYou(), IAmADie)
+        self.roll_state = msg.roll_state
+        self.roll_face = msg.roll_face
+        self.batt_state = msg.batt_state
+        self.batt_level = msg.batt_level
+        return msg
 
     async def what_do_you_want(self):
         """
@@ -375,7 +380,10 @@ class Pixel:
         """
         Request the current roll state.
         """
-        return await self._link.send_and_wait(RequestRollState(), RollState)
+        msg = await self._link.send_and_wait(RequestRollState(), RollState)
+        self.roll_state = msg.state
+        self.roll_face = msg.face
+        return msg
 
     async def blink(self, **params) -> None:
         await self._link.send_and_wait(Blink(**params), BlinkAck)
