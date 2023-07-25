@@ -20,8 +20,8 @@ art = "^6.0"
 
 
 [tool.poetry.group.dev.dependencies]
-textual = {extras = ["dev"], version = ">=0.28.1,<0.31.0"}
 watchgha = "^2.1.1"
+textual-dev = "^1.0.1"
 
 
 [tool.poetry.group.docs.dependencies]
