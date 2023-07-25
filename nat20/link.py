@@ -58,14 +58,24 @@ class PixelLink:
     #: :meta public:
     _message_handlers: dict[type, list[Callable[[Message], None]]]
 
-    def __init__(self):
+    def __init__(self, client: bleak.BleakClient):
+        self._client = client
         self._wait_queue = collections.defaultdict(list)
         self._message_handlers = collections.defaultdict(list)
+
+    @property
+    def address(self):
+        return self._client.address
+
+    @property
+    def is_connected(self):
+        return self._client.is_connected
 
     async def connect(self):
         """
         Does the bits necessary to start receiving stuff.
         """
+        await self._client.connect()
         # https://github.com/hbldh/bleak/discussions/1350#discussioncomment-6308104
         # mtu = await _get_real_mtu(self._client)
         # print("MTU:", mtu)
@@ -77,6 +87,7 @@ class PixelLink:
         Does the bits necessary to stop receiving stuff.
         """
         await self._client.stop_notify(CHARI_NOTIFY)
+        await self._client.disconnect()
 
     async def _recv_notify(self, _, packet: bytearray):
         """
@@ -106,37 +117,31 @@ class PixelLink:
             for handler in self._message_handlers[msgcls]:
                 _call_or_task(handler, message)
 
-    async def _send(self, message: Message):
+    async def send(self, message: Message):
         """
         Send a message to the connected device
-
-        :meta public:
         """
         blob = pack(message)
         await self._client.write_gatt_char(CHARI_WRITE, blob)
 
-    async def _wait(self, msgcls: type[Message]) -> Message:
+    async def wait(self, msgcls: type[Message]) -> Message:
         """
         Waits for a given message.
 
         Note that if you want to send and receive a response, you should use
-        :meth:`_send_and_wait`, it has better async properties.
-
-        :meta public:
+        :meth:`send_and_wait`, it has better async properties.
         """
         fut = asyncio.get_event_loop().create_future()
         self._wait_queue[msgcls].append(fut)
         return await fut
 
-    async def _send_and_wait(self, msg: Message, respcls: type[Message]) -> Message:
+    async def send_and_wait(self, msg: Message, respcls: type[Message]) -> Message:
         """
         Sends a message and waits for the response.
 
         Returns the response.
-
-        :meta public
         """
         fut = asyncio.get_event_loop().create_future()
         self._wait_queue[respcls].append(fut)
-        await self._send(msg)
+        await self.send(msg)
         return await fut

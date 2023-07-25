@@ -166,7 +166,7 @@ async def scan_for_dice() -> AsyncIterable[ScanResult]:
             yield await q.get()
 
 
-class Pixel(PixelLink):
+class Pixel:
     """
     Class for a pixel die.
 
@@ -186,6 +186,8 @@ class Pixel(PixelLink):
 
     _expected_disconnect: bool = False
 
+    _link: PixelLink
+
     def __init__(self, sr: ScanResult):
         """
         Use :meth:`ScanResult.connect` instead.
@@ -194,12 +196,12 @@ class Pixel(PixelLink):
         """
         self._device = sr._device
         self.name = sr.name
-        self._client = bleak.BleakClient(
+        self._link = PixelLink(bleak.BleakClient(
             sr._device,
             services=[SERVICE_INFO, SERVICE_PIXELS],
             disconnected_callback=lambda c: asyncio.create_task(
                 self._on_disconnect(c)),
-        )
+        ))
         super().__init__()
 
     async def connect(self) -> Self:
@@ -207,17 +209,14 @@ class Pixel(PixelLink):
         Connect to die
         """
         self._expected_disconnect = False
-        await self._client.connect()
-        await super().connect()
-        return self
+        await self._link.connect()
 
-    async def disconnect(self, *exc):
+    async def disconnect(self):
         """
         Disconnect from die
         """
-        await super().disconnect(*exc)
         self._expected_disconnect = True
-        await self._client.disconnect()
+        await self._link.disconnect()
 
     @contextlib.asynccontextmanager
     async def auto_reconnect(self) -> AsyncGenerator[Self, None]:
@@ -249,14 +248,14 @@ class Pixel(PixelLink):
         """
         The MAC address (UUID on macOS) of the die.
         """
-        return self._client.address
+        return self._link.address
 
     @property
     def is_connected(self) -> bool:
         """
         Are we currently connected to the die?
         """
-        return self._client.is_connected
+        return self._link.is_connected
 
     def handler(self, msgcls: Union[EllipsisType, type[Message]]):
         """
@@ -272,9 +271,9 @@ class Pixel(PixelLink):
         def _(func):
             if msgcls is ...:
                 for cls in iter_msgs():
-                    self._message_handlers[cls].append(func)
+                    self._link._message_handlers[cls].append(func)
             else:
-                self._message_handlers[msgcls].append(func)
+                self._link._message_handlers[msgcls].append(func)
 
             return func
 
@@ -284,7 +283,7 @@ class Pixel(PixelLink):
         """
         Perform a basic info query
         """
-        return await self._send_and_wait(WhoAreYou(), IAmADie)
+        return await self._link.send_and_wait(WhoAreYou(), IAmADie)
 
     async def what_do_you_want(self):
         """
@@ -303,10 +302,10 @@ class Pixel(PixelLink):
         """
         Request the current roll state.
         """
-        return await self._send_and_wait(RequestRollState(), RollState)
+        return await self._link.send_and_wait(RequestRollState(), RollState)
 
     async def blink(self, **params) -> None:
-        await self._send_and_wait(Blink(**params), BlinkAck)
+        await self._link.send_and_wait(Blink(**params), BlinkAck)
 
     async def blink_id(self, brightness: int, loop: bool = False) -> None:
         """
@@ -320,4 +319,4 @@ class Pixel(PixelLink):
             This only blocks until the die acknowledges the command, not until
             the animation is finished.
         """
-        await self._send_and_wait(BlinkId(brightness, int(loop)), BlinkIdAck)
+        await self._link.send_and_wait(BlinkId(brightness, int(loop)), BlinkIdAck)
