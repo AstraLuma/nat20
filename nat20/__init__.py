@@ -20,6 +20,7 @@ import struct
 from types import EllipsisType
 from typing import Self, Union
 
+import aioevents
 import bleak
 
 from .constants import SERVICE_PIXELS, SERVICE_INFO
@@ -188,6 +189,9 @@ class Pixel:
 
     _link: PixelLink
 
+    got_roll_state = aioevents.Event("A new RollState has been sent.")
+    got_battery_state = aioevents.Event("A new BatteryState has been sent.")
+
     def __init__(self, sr: ScanResult):
         """
         Use :meth:`ScanResult.connect` instead.
@@ -202,9 +206,11 @@ class Pixel:
             disconnected_callback=lambda c: asyncio.create_task(
                 self._on_disconnect(c)),
         ))
-        super().__init__()
 
-    async def connect(self) -> Self:
+        self._link._message_handlers[RollState].append(self._on_roll_state)
+        self._link._message_handlers[BatteryState].append(self._on_battery_state)
+
+    async def connect(self):
         """
         Connect to die
         """
@@ -235,6 +241,12 @@ class Pixel:
             await client.connect()
             # XXX: What if reconnect fails?
             # XXX: Block requests until reconnect happens?
+
+    def _on_roll_state(self, msg: RollState):
+        self.got_roll_state.trigger(msg)
+
+    def _on_battery_state(self, msg: BatteryState):
+        self.got_battery_state.trigger(msg)
 
     def __repr__(self):
         return (

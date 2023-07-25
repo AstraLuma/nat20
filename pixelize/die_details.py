@@ -110,8 +110,8 @@ class DieDetailsScreen(Screen):
         self.die = die
         self.ad = ad
 
-        self.die.handler(RollState)(self.update_state)
-        self.die.handler(BatteryLevel)(self.update_batt)
+        self.die.got_roll_state.handler(self.update_state, weak=True)
+        self.die.got_battery_state.handler(self.update_batt, weak=True)
         self.inquire_die()
 
     @work(exclusive=True)
@@ -123,13 +123,13 @@ class DieDetailsScreen(Screen):
         self.get_child_by_id('batt').state = info.battery_state
         self.get_child_by_id('batt').percent = info.battery_percent
 
-    def update_state(self, msg: RollState):
+    def update_state(self, _, msg: RollState):
         print(f"{msg=}")
         lbl: FaceLabel = self.get_child_by_id('face')
         lbl.state = msg.state
         lbl.face = msg.face
 
-    def update_batt(self, msg: BatteryLevel):
+    def update_batt(self, _, msg: BatteryLevel):
         print(f"{msg=}")
         lbl: BatteryLabel = self.get_child_by_id('batt')
         lbl.state = msg.state
