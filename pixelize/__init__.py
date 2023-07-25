@@ -34,7 +34,7 @@ class DieSummary(Static):
         for attr in dir(sr):
             if attr == 'name':
                 self.die_name = sr.name
-            elif attr in ('id',):
+            elif attr in ('pixel_id',):
                 # Skip
                 pass
             elif hasattr(self, attr) and not attr.startswith('_'):
@@ -117,7 +117,7 @@ class DiceBagScreen(Screen):
         Run the BLE Scanner and update the app data
         """
         async for dev in scan_for_dice():
-            cid = f"die_{dev.id:08X}"
+            cid = f"die_{dev.pixel_id:08X}"
             bag = self.get_child_by_id('dice')
             try:
                 die = bag.get_child_by_id(cid)

@@ -45,12 +45,12 @@ async def main():
 
     async with sr.hydrate().connect_with_reconnect() as die:
         @die.got_roll_state.handler
-        @die.got_battery_state.handler
+        @die.got_battery_level.handler
         def recv(_, msg):
             print(f"Received {msg}")
         print(f"{die=}")
         print(await die.who_are_you())
-        print(await die.roll_state())
+        print(await die.get_roll_state())
         # await die.blink(
         #     count=3,
         #     duration=500,

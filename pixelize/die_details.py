@@ -146,7 +146,7 @@ class DieDetailsScreen(Screen):
         self.ad = ad
 
         self.die.got_roll_state.handler(self.update_state, weak=True)
-        self.die.got_battery_state.handler(self.update_batt, weak=True)
+        self.die.got_battery_level.handler(self.update_batt, weak=True)
         self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
@@ -156,8 +156,8 @@ class DieDetailsScreen(Screen):
         self.get_child_by_id('id').die_id = info.pixel_id
         self.get_child_by_id('face').state = info.roll_state
         self.get_child_by_id('face').face = info.roll_face
-        self.get_child_by_id('batt').state = info.battery_state
-        self.get_child_by_id('batt').percent = info.battery_percent
+        self.get_child_by_id('batt').state = info.batt_state
+        self.get_child_by_id('batt').percent = info.batt_level
         self.get_child_by_id('flavor').flavor = info.flavor
 
     def on_disconnected(self, _):
@@ -181,10 +181,10 @@ class DieDetailsScreen(Screen):
         yield Header()
         yield Footer()
         yield Jumbo(text=self.die.name)
-        yield IdLabel(die_id=self.ad.id, id='id')
+        yield IdLabel(die_id=self.ad.pixel_id, id='id')
         yield FlavorLabel(flavor=self.ad.flavor, id='flavor')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
-        yield FaceLabel(state=self.ad.roll_state, face=self.ad.face, id='face')
+        yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
         yield Button("Identify", id="ident")
 
     @on(Button.Pressed, '#ident')
