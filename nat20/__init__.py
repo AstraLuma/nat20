@@ -138,7 +138,7 @@ class ScanResult:
         """
         return BatteryLevel(
             state=self.batt_state.as_batterystate(),
-            percent=self.batt_level,
+            level=self.batt_level,
         )
 
     def hydrate(self) -> 'Pixel':
@@ -184,9 +184,6 @@ class Pixel:
 
     Do not construct directly, use :func:`scan_for_dice` to find the die you
     want and then use :meth:`ScanResult.connect` to get an instance.
-
-    Actually perform the network connection using ``async with``. Use
-    :class:`contextlib.AsyncExitStack` to avoid this.
     """
     # The requirement to use scan_for_dice() is because while bleak does
     # support connecting by address, it internally just does a scan anyway,
