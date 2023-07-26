@@ -39,6 +39,20 @@ class RollState_State(IntEnum):
     Crooked = 4
 
 
+class RequestMode(IntEnum):
+    """
+    How much should a thing be reported.
+
+    (Called TelemetryRequestMode in other places.)
+    """
+    #: Turn repeating off
+    Off = 0
+    #: Do a one-shot request
+    Once = 1
+    #: Repeatedly send the data until turned off.
+    Repeat = 2
+
+
 @dataclass
 class NoneMessage(EmptyMessage, id=0):
     """
@@ -429,13 +443,27 @@ class BatteryLevel(BasicMessage, id=34, format="BB"):
 
 
 @dataclass
-class RequestRssi(BasicMessage, id=35, format=""):
-    ...
+class RequestRssi(BasicMessage, id=35, format="BH"):
+    """
+    Request RSSI.
+
+    Replied with :class:`Rssi`.
+    """
+    #: Set the reporting mode
+    request_mode: RequestMode
+    #: Interval of repeated reports, in milliseconds
+    min_interval: int
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.request_mode = RequestMode(self.request_mode)
+        return self
 
 
 @dataclass
-class Rssi(BasicMessage, id=36, format=""):
-    ...
+class Rssi(BasicMessage, id=36, format="b"):
+    rssi: int
 
 
 @dataclass

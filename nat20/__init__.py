@@ -26,11 +26,12 @@ import bleak
 from .constants import SERVICE_PIXELS, SERVICE_INFO
 from .link import PixelLink
 from .messages import (
-    DesignAndColor, RequestBatteryLevel, WhoAreYou, IAmADie, DieFlavor,
+    DesignAndColor, WhoAreYou, IAmADie, DieFlavor,
     RequestRollState, RollState, RollState_State,
+    RequestBatteryLevel, BatteryLevel, BatteryState,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
-    BatteryLevel, BatteryState,
     StopAllAnimations,
+    RequestMode, RequestRssi, Rssi,
 )  # Also, import messages so they get defined
 
 LOG = logging.getLogger(__name__)
@@ -469,3 +470,13 @@ class Pixel:
         """
         # Nope, no acknowledgement packet
         await self._link.send(StopAllAnimations())
+
+    async def get_rssi(self) -> int:
+        """
+        Request the RSSI the die sees.
+        """
+        msg = await self._link.send_and_wait(RequestRssi(
+            request_mode=RequestMode.Once,
+            min_interval=0,
+        ), Rssi)
+        return msg.rssi
