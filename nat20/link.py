@@ -111,6 +111,7 @@ class PixelLink:
         :meta private:
         """
         LOG.debug("Dispatching %r", message)
+        print(f"Recv {message=}")
         msgcls = type(message)
         if len(self._wait_queue[msgcls]):
             fut = self._wait_queue[msgcls].pop(0)
@@ -123,6 +124,7 @@ class PixelLink:
         """
         Send a message to the connected device
         """
+        print(f"Send {message=}")
         blob = pack(message)
         await self._client.write_gatt_char(CHARI_WRITE, blob)
 

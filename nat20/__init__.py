@@ -17,6 +17,7 @@ import datetime
 import enum
 import logging
 import struct
+from types import EllipsisType
 from typing import Self
 
 import aioevents
@@ -29,6 +30,7 @@ from .messages import (
     RequestRollState, RollState, RollState_State,
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     BatteryLevel, BatteryState,
+    StopAllAnimations,
 )  # Also, import messages so they get defined
 
 LOG = logging.getLogger(__name__)
@@ -410,8 +412,42 @@ class Pixel:
         self.data_changed.trigger({'batt_level', 'batt_state'})
         return msg
 
-    async def blink(self, **params) -> None:
-        await self._link.send_and_wait(Blink(**params), BlinkAck)
+    async def blink(self, *,
+                    color: int,
+                    count: int | EllipsisType = 1,
+                    duration: float,
+                    fade: int = 0,
+                    led_mask: int = 0xFF,
+                    ) -> None:
+        """
+        Do an ad-hoc blink animation.
+
+        Args:
+            color: The color to flash, in 0xRRGGBB
+            count: The number of blinks to perform, or ``...`` to go until cancelled
+            duration: The time of each on-off loop, in seconds
+            fade: The amount of time to spend fading, as a 'percent' (0-255) of a half-loop
+            led_mask: A bitmask of which LEDs to blink (1 means blink it, 0 means ignore it)
+
+        The blink will always have a 50% duty cycle.
+
+        Note:
+            This only blocks until the die acknowledges the command, not until
+            the animation is finished.
+
+        Note:
+            Different animations can overlay each other and run in parallel.
+        """
+        loop, count = (1, 1) if count is ... else (0, count)
+        msg = Blink(
+            count=count,
+            duration=int(count * duration * 1000),
+            color=color,
+            face_mask=led_mask,
+            fade=fade,
+            loop=loop,
+        )
+        await self._link.send_and_wait(msg, BlinkAck)
 
     async def blink_id(self, brightness: int, loop: bool = False) -> None:
         """
@@ -426,3 +462,10 @@ class Pixel:
             the animation is finished.
         """
         await self._link.send_and_wait(BlinkId(brightness, int(loop)), BlinkIdAck)
+
+    async def stop_all_animations(self) -> None:
+        """
+        Stops any animations currently running, regardless of source.
+        """
+        # Nope, no acknowledgement packet
+        await self._link.send(StopAllAnimations())

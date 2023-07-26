@@ -549,8 +549,10 @@ class PlayInstantAnimation(BasicMessage, id=58, format=""):
 
 
 @dataclass
-class StopAllAnimations(BasicMessage, id=59, format=""):
-    ...
+class StopAllAnimations(EmptyMessage, id=59):
+    """
+    Stop all animations.
+    """
 
 
 @dataclass
@@ -589,6 +591,8 @@ class BlinkIdAck(EmptyMessage, id=66):
     pass
 
 
+# FIXME: Do these TransferTest* messages exist?
+# FIXME: Are messages beyond this point numbered correctly?
 @dataclass
 class TransferTest(BasicMessage, id=67, format=""):
     ...
