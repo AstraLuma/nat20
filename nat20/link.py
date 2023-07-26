@@ -5,7 +5,7 @@ import asyncio
 import collections
 import inspect
 import logging
-from typing import Callable
+from typing import Callable, TypeVar
 
 import bleak
 
@@ -30,6 +30,8 @@ async def _get_real_mtu(client):
         await client._backend._acquire_mtu()
 
     return client.mtu_size
+
+ReplyKind = TypeVar('R', bound=Message)
 
 
 class PixelLink:
@@ -124,7 +126,7 @@ class PixelLink:
         blob = pack(message)
         await self._client.write_gatt_char(CHARI_WRITE, blob)
 
-    async def wait(self, msgcls: type[Message]) -> Message:
+    async def wait(self, msgcls: type[ReplyKind]) -> ReplyKind:
         """
         Waits for a given message.
 
@@ -135,7 +137,7 @@ class PixelLink:
         self._wait_queue[msgcls].append(fut)
         return await fut
 
-    async def send_and_wait(self, msg: Message, respcls: type[Message]) -> Message:
+    async def send_and_wait(self, msg: Message, respcls: type[ReplyKind]) -> ReplyKind:
         """
         Sends a message and waits for the response.
 

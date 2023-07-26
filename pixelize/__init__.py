@@ -13,7 +13,7 @@ from textual.widgets import (
 )
 
 from nat20 import scan_for_dice, ScanResult
-from nat20.messages import RollState_State
+from nat20.messages import DieFlavor, RollState_State
 
 from .junk_drawer import WorkingModal
 from .die_details import DieDetailsScreen
@@ -25,7 +25,7 @@ class DieSummary(Static):
     """
 
     die_name = reactive("")
-    led_count = reactive(0)
+    flavor = reactive(DieFlavor.D20)
     face = reactive(0)
     roll_state = reactive(None)
     batt_level = reactive(0)
@@ -34,9 +34,6 @@ class DieSummary(Static):
         for attr in dir(sr):
             if attr == 'name':
                 self.die_name = sr.name
-            elif attr in ('id',):
-                # Skip
-                pass
             elif hasattr(self, attr) and not attr.startswith('_'):
                 setattr(self, attr, getattr(sr, attr))
 
@@ -48,13 +45,13 @@ class DieSummary(Static):
     def render(self):
         if self.roll_state == RollState_State.OnFace:
             return (
-                f"{self.die_name} (d{self.led_count}): {self.face + 1} "
+                f"{self.die_name} ({self.flavor}): {self.face + 1} "
                 f"\U0001F50B{self.batt_level}%"
             )
         elif self.roll_state == RollState_State.Crooked:
-            return f"{self.die_name} (d{self.led_count}): Crooked \U0001F50B{self.batt_level}%"
+            return f"{self.die_name} ({self.flavor}): Crooked \U0001F50B{self.batt_level}%"
         else:
-            return f"{self.die_name} (d{self.led_count}): Rolling \U0001F50B{self.batt_level}%"
+            return f"{self.die_name} ({self.flavor}): Rolling \U0001F50B{self.batt_level}%"
 
 
 class Die(Static):
@@ -117,7 +114,7 @@ class DiceBagScreen(Screen):
         Run the BLE Scanner and update the app data
         """
         async for dev in scan_for_dice():
-            cid = f"die_{dev.id:08X}"
+            cid = f"die_{dev.pixel_id:08X}"
             bag = self.get_child_by_id('dice')
             try:
                 die = bag.get_child_by_id(cid)

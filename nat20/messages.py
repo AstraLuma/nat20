@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import datetime
-from enum import IntEnum
+from enum import Enum, IntEnum, auto
 from typing import Self
 
 from .msglib import Message, BasicMessage, EmptyMessage
@@ -55,6 +55,65 @@ class WhoAreYou(EmptyMessage, id=1):
     """
 
 
+class DieFlavor(Enum):
+    D4 = auto()
+    D6 = auto()
+    D6Pipped = auto()
+    D6Fudge = auto()
+    D8 = auto()
+    D10 = auto()
+    D12 = auto()
+    D20 = auto()
+
+    @staticmethod
+    def _from_led_count(leds: int) -> 'DieFlavor':
+        try:
+            return {
+                4: DieFlavor.D4,
+                6: DieFlavor.D6,
+                8: DieFlavor.D8,
+                10: DieFlavor.D10,
+                12: DieFlavor.D12,
+                20: DieFlavor.D20,
+                21: DieFlavor.D6Pipped,
+                # ???: DieFlavor.D6Fudge
+            }[leds]
+        except KeyError as exc:
+            raise ValueError("Unknown LED count: %i", leds) from exc
+
+    @property
+    def face_count(self) -> int:
+        """
+        Return the number of faces this flavor has.
+        """
+        return {
+            DieFlavor.D4: 4,
+            DieFlavor.D6: 6,
+            DieFlavor.D8: 8,
+            DieFlavor.D10: 10,
+            DieFlavor.D12: 12,
+            DieFlavor.D20: 20,
+            DieFlavor.D6Pipped: 6,
+            DieFlavor.D6Fudge: 6,
+        }[self]
+
+
+class DesignAndColor(IntEnum):
+    Unknown = 0
+    Generic = 1
+    V3Orange = 2
+    V4BlackClear = 3
+    V4WhiteClear = 4
+    V5Grey = 5
+    V5White = 6
+    V5Black = 7
+    V5Gold = 8
+    OnyxBlack = 9
+    HematiteGrey = 10
+    MidnightGalaxy = 11
+    AuroraSky = 12
+
+
 @dataclass
 class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
@@ -64,7 +123,8 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     """
     #: Number of LEDs
     led_count: int
-    design_and_color: int  # TODO: enum
+    #: The aesthetic design of the die
+    design_and_color: DesignAndColor
     data_set_hash: int
     #: The factory-assigned die ID
     pixel_id: int
@@ -78,15 +138,30 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
     roll_face: int
 
     #: Current battery level as a percent
-    battery_percent: int
+    batt_level: int
     #: Current battery percent
-    battery_state: BatteryState
+    batt_state: BatteryState
+
+    @property
+    def flavor(self) -> DieFlavor:
+        """
+        The kind of die this is, like D20 or Pipped D6
+        """
+        return DieFlavor._from_led_count(self.led_count)
+
+    @property
+    def face_count(self) -> int:
+        """
+        The total number of faces
+        """
+        return self.flavor.face_count
 
     @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
         self = super().__struct_unpack__(blob)
         self.roll_state = RollState_State(self.roll_state)
-        self.battery_state = BatteryState(self.battery_state)
+        self.batt_state = BatteryState(self.batt_state)
+        self.design_and_color = DesignAndColor(self.design_and_color)
         self.build_timestamp = datetime.datetime.fromtimestamp(
             self.build_timestamp, tz=datetime.timezone.utc)
 
@@ -106,8 +181,8 @@ class IAmADie(BasicMessage, id=2, format="BB1xLLHL BB BB"):
         Repackages the battery information.
         """
         return BatteryLevel(
-            state=self.battery_state,
-            percent=self.battery_percent,
+            state=self.batt_state,
+            level=self.batt_level,
         )
 
 
@@ -342,7 +417,7 @@ class BatteryLevel(BasicMessage, id=34, format="BB"):
     :class:`RequestBatteryLevel`.
     """
     #: The current level of the battery, as a percent
-    percent: int
+    level: int
     #: The current charge state
     state: BatteryState
 

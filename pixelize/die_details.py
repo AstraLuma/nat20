@@ -5,7 +5,7 @@ from textual.widgets import Static, Header, Footer, Label, Button
 import nat20
 
 from nat20.messages import (
-    BatteryLevel, BatteryState, RollState, RollState_State,
+    BatteryState, DieFlavor, RollState_State,
 )
 
 from .junk_drawer import Jumbo, WorkingModal
@@ -97,6 +97,41 @@ class IdLabel(Label):
         return f"ID: {self.die_id:06X}"
 
 
+class FlavorLabel(Label):
+    flavor = reactive(DieFlavor.D20)
+
+    DEFAULT_CSS = """
+    FlavorLabel {
+        width: 12;
+    }
+    """
+
+    def __init__(self, /, flavor: DieFlavor = DieFlavor.D20, **kwargs):
+        super().__init__(**kwargs)
+        self.flavor = flavor
+
+    def render(self):
+        match self.flavor:
+            case DieFlavor.D4:
+                return "Flavor: D4"
+            case DieFlavor.D6:
+                return "Flavor: D6"
+            case DieFlavor.D6Pipped:
+                return "Flavor: D6 (Pipped)"
+            case DieFlavor.D6Fudge:
+                return "Flavor: Fudge"
+            case DieFlavor.D8:
+                return "Flavor: D8"
+            case DieFlavor.D10:
+                return "Flavor: D10"
+            case DieFlavor.D12:
+                return "Flavor: D12"
+            case DieFlavor.D20:
+                return "Flavor: D20"
+            case flavor:
+                return f"Flavor: {flavor}"
+
+
 class DieDetailsScreen(Screen):
     die: nat20.Pixel
     ad: nat20.ScanResult
@@ -110,44 +145,36 @@ class DieDetailsScreen(Screen):
         self.die = die
         self.ad = ad
 
-        self.die.got_roll_state.handler(self.update_state, weak=True)
-        self.die.got_battery_state.handler(self.update_batt, weak=True)
+        self.die.data_changed.handler(self.update_data, weak=True)
         self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
     @work(exclusive=True)
     async def inquire_die(self):
-        info = await self.die.who_are_you()
-        self.get_child_by_id('id').die_id = info.pixel_id
-        self.get_child_by_id('face').state = info.roll_state
-        self.get_child_by_id('face').face = info.roll_face
-        self.get_child_by_id('batt').state = info.battery_state
-        self.get_child_by_id('batt').percent = info.battery_percent
+        await self.die.who_are_you()  # Relies on firing the data_changed event
+
+    async def update_data(self, _, props):
+        print("Got updated data", props)
+        self.get_child_by_id('id').die_id = self.die.pixel_id
+        self.get_child_by_id('face').state = self.die.roll_state
+        self.get_child_by_id('face').face = self.die.roll_face
+        self.get_child_by_id('batt').state = self.die.batt_state
+        self.get_child_by_id('batt').percent = self.die.batt_level
+        self.get_child_by_id('flavor').flavor = self.die.flavor
 
     def on_disconnected(self, _):
         self.app.push_screen(
             WorkingModal("Reconnecting", self.die.connect()),
         )
 
-    def update_state(self, _, msg: RollState):
-        print(f"{msg=}")
-        lbl: FaceLabel = self.get_child_by_id('face')
-        lbl.state = msg.state
-        lbl.face = msg.face
-
-    def update_batt(self, _, msg: BatteryLevel):
-        print(f"{msg=}")
-        lbl: BatteryLabel = self.get_child_by_id('batt')
-        lbl.state = msg.state
-        lbl.percent = msg.percent
-
     def compose(self):
         yield Header()
         yield Footer()
         yield Jumbo(text=self.die.name)
-        yield IdLabel(die_id=self.ad.id, id='id')
+        yield IdLabel(die_id=self.ad.pixel_id, id='id')
+        yield FlavorLabel(flavor=self.ad.flavor, id='flavor')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
-        yield FaceLabel(state=self.ad.roll_state, face=self.ad.face, id='face')
+        yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
         yield Button("Identify", id="ident")
 
     @on(Button.Pressed, '#ident')
