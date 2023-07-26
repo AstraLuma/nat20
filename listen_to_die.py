@@ -60,15 +60,19 @@ async def main():
         #     fade=0,
         #     loop=0,
         # )
-        print("Blink full")
-        await die.blink_id(0xFF)
-        await asyncio.sleep(5)
-        print("blink half")
-        await die.blink_id(0x7F)
-        await asyncio.sleep(5)
-        print("blink zero")
-        await die.blink_id(0)
-        await asyncio.sleep(5)
+        print(1)
+        await die.blink(color=0x000000FF, duration=3, fade=0)
+        await asyncio.sleep(3)
+        print(2)
+        await die.blink(color=0x0000FF00, duration=3, fade=0x7F)
+        await asyncio.sleep(3)
+        print(3)
+        await die.blink(color=0x00FF0000, duration=3, fade=0xFF)
+        await asyncio.sleep(3)
+        await die.blink(color=0xFFFFFF, duration=5, fade=0xEE, count=...)
+
         await asyncio.sleep(10)
+        await die.stop_all_animations()
+        await asyncio.sleep(3)
 
 asyncio.run(main())
