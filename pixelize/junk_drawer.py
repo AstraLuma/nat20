@@ -131,6 +131,30 @@ class SpinButton(SpinningMixin, Button):
     """
     A button, but if you set the spinner, it'll override the label and disable pressing.
     """
+    DEFAULT_CSS = """
+    SpinButton {
+        width: auto;
+        min-width: 16;
+        height: 3;
+        background: $panel;
+        color: $text;
+        border: none;
+        border-top: tall $panel-lighten-2;
+        border-bottom: tall $panel-darken-3;
+        content-align: center middle;
+        text-style: bold;
+    }
+
+    SpinButton:focus {
+        text-style: bold reverse;
+    }
+
+    SpinButton:hover {
+        border-top: tall $panel;
+        background: $panel-darken-2;
+        color: $text;
+    }
+    """
 
     def press(self) -> Self:
         if self.get_spin_frame() is not None:
