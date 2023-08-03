@@ -52,6 +52,7 @@ async def main():
         print(await die.who_are_you())
         print(await die.get_roll_state())
         print(await die.get_battery_level())
+        print("RSSI:", await die.get_rssi())
         # await die.blink(
         #     count=3,
         #     duration=500,

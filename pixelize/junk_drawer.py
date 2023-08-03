@@ -13,7 +13,7 @@ from textual.containers import Grid
 from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import ProgressBar, Label, Button, Static
+from textual.widgets import LoadingIndicator, Label, Button, Static
 
 
 class WorkingModal(ModalScreen):
@@ -37,7 +37,7 @@ class WorkingModal(ModalScreen):
 
     def compose(self):
         yield Grid(
-            ProgressBar(id='modal-content'),
+            LoadingIndicator(id='modal-content'),
             id='modal'
         )
 
