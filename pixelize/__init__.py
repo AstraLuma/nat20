@@ -1,5 +1,3 @@
-import asyncio
-
 from textual import work, on
 from textual.app import App
 from textual.css.query import NoMatches
