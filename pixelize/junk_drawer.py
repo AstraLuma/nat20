@@ -1,4 +1,10 @@
 import asyncio
+import importlib.resources
+import json
+import time
+from textual.app import RenderResult
+
+from textual.widget import Widget
 
 import art
 from textual import on
@@ -65,3 +71,26 @@ class Jumbo(Static):
 
     def render(self):
         return art.text2art(self.text, font=self.font)
+
+
+SPINNERS = json.loads(importlib.resources.read_text(__package__, 'spinners.json'))
+
+
+class Spinner(Widget):
+    """
+    Sits and spins.
+    """
+    #: See https://jsfiddle.net/sindresorhus/2eLtsbey/embedded/result/
+    spinner = reactive[str]('dots')
+
+    def __init__(self, /, spinner: str = 'dots', **kwargs):
+        super().__init__(**kwargs)
+        self.spinner = spinner
+
+    def watch_spinner(self, spinner: str):
+        self.auto_refresh = SPINNERS[spinner]['interval'] / 1000
+
+    def render(self) -> RenderResult:
+        frames = SPINNERS[self.spinner]['frames']
+        cur_frame = int((time.monotonic() / self.auto_refresh) % len(frames))
+        return frames[cur_frame]
