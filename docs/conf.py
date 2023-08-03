@@ -35,6 +35,7 @@ html_static_path = ['_static']
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'bleak': ('https://bleak.readthedocs.io/en/latest/', None),
+    'aioevents': ('https://aioevents.readthedocs.io/en/stable/', None),
     # Textual
 }
 
