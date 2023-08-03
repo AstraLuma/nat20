@@ -191,6 +191,9 @@ class DieDetailsScreen(Screen):
         self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
+    async def on_unmount(self, _):
+        await self.die.disconnect()
+
     @work(exclusive=True)
     async def inquire_die(self):
         await self.die.who_are_you()  # Relies on firing the data_changed event
