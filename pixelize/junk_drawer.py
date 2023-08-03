@@ -186,5 +186,7 @@ class ActionButton(SpinButton):
         self.spinner = spinner
 
         @future.add_done_callback
-        def done():
+        def done(_):
             self.spinner = None
+
+        return future

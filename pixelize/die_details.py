@@ -219,11 +219,11 @@ class DieDetailsScreen(Screen):
         yield FlavorLabel(flavor=self.ad.flavor, id='flavor')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
-        yield Button("Identify", id="ident")
+        yield ActionButton("Identify", id="ident")
 
     @on(Button.Pressed, '#ident')
-    async def do_ident(self, _):
-        await self.die.blink_id(0xFF)
+    async def do_ident(self, event: Button.Pressed):
+        await event.button.track_future('dots', self.die.blink_id(0xFF))
 
     @on(Button.Pressed, '#change-name')
     def do_name_change(self, _):
