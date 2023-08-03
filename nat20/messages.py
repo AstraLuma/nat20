@@ -463,6 +463,11 @@ class RequestRssi(BasicMessage, id=35, format="BH"):
 
 @dataclass
 class Rssi(BasicMessage, id=36, format="b"):
+    """
+    Report the current RSSI as seen by the die.
+
+    See :class:`RequestRssi`.
+    """
     rssi: int
 
 
