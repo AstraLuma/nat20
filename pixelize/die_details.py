@@ -1,5 +1,3 @@
-import asyncio
-
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical
@@ -159,15 +157,17 @@ class ChangeNameModal(ModalScreen):
 
     @on(Input.Submitted, '#name')
     def on_submitted(self, _):
-        self.get_child_by_id('change').press()
+        self.get_widget_by_id('change').press()
 
     @on(Button.Pressed, '#change')
-    def on_changed(self, event: Button.Pressed):
+    async def on_changed(self, event: Button.Pressed):
         async def work():
-            await asyncio.sleep(5)
+            input: Input = self.get_widget_by_id('name')
+            newname = input.value
+            await self.die.set_name(newname)
             self.dismiss(True)
 
-        event.button.track_future('dots', work())
+        await event.button.track_future('dots', work())
 
     @on(Button.Pressed, '#cancel')
     def on_cancelled(self, _):
