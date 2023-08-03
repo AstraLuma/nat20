@@ -3,7 +3,7 @@ import datetime
 from enum import Enum, IntEnum, auto
 from typing import Self
 
-from .msglib import Message, BasicMessage, EmptyMessage
+from .msglib import BasicMessage, EmptyMessage, StrMessage
 
 
 class BatteryState(IntEnum):
@@ -309,7 +309,7 @@ class TransferTestAnimationSetFinished(BasicMessage, id=17, format=""):
 
 
 @dataclass
-class DebugLog(Message, id=18):
+class DebugLog(StrMessage, id=18):
     text: str
 
     @classmethod
@@ -537,13 +537,18 @@ class SetCurrentBehaviorAck(BasicMessage, id=50, format=""):
 
 
 @dataclass
-class SetName(BasicMessage, id=51, format=""):
-    ...
+class SetName(StrMessage, id=51):
+    """
+    Change the name of the die.
+    """
+    name: str
 
 
 @dataclass
-class SetNameAck(BasicMessage, id=52, format=""):
-    ...
+class SetNameAck(EmptyMessage, id=52):
+    """
+    Acknowledges :class:`SetName`.
+    """
 
 
 @dataclass
