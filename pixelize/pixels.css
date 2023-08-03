@@ -17,8 +17,7 @@ DieSummary {
   margin: 1;
 }
 
-WorkingModal,
-ErrorModal {
+ModalScreen {
   align: center middle;
 }
 

@@ -1,10 +1,18 @@
 import asyncio
+import importlib.resources
+import json
+import time
+from typing import Optional, Self
 
 import art
+import rich.repr
+from rich.text import Text, TextType
 from textual import on
+from textual.app import RenderResult
 from textual.containers import Grid
 from textual.reactive import reactive
 from textual.screen import ModalScreen
+from textual.widget import Widget
 from textual.widgets import ProgressBar, Label, Button, Static
 
 
@@ -65,3 +73,120 @@ class Jumbo(Static):
 
     def render(self):
         return art.text2art(self.text, font=self.font)
+
+
+SPINNERS = json.loads(importlib.resources.read_text(__package__, 'spinners.json'))
+
+
+class SpinningMixin(Widget):
+    """
+    Provides some infra around throbbing.
+
+    Takes command of :attr:`auto_refresh`.
+    """
+    #: See https://jsfiddle.net/sindresorhus/2eLtsbey/embedded/result/
+    spinner = reactive[Optional[str]](None)
+
+    _frames: list[str]
+
+    def watch_spinner(self, spinner: str | None):
+        if spinner is None:
+            self.auto_refresh = None
+            self._frames = []
+        else:
+            spininfo = SPINNERS[spinner]
+            self.auto_refresh = spininfo['interval'] / 1000
+            self._frames = spininfo['frames']
+
+    def get_spin_frame(self) -> str | None:
+        """
+        Gets the current frame of the spinner, or returns None if spinning is
+        disabled.
+        """
+        if self.auto_refresh is None or not self._frames:
+            return None
+        else:
+            cur_frame = int((time.monotonic() / self.auto_refresh) % len(self._frames))
+            return self._frames[cur_frame]
+
+
+class Spinner(SpinningMixin, Static):
+    """
+    Sits and spins.
+    """
+
+    def __init__(self, /, spinner: str = 'dots', **kwargs):
+        super().__init__(**kwargs)
+        self.spinner = spinner
+
+    def __rich_repr__(self) -> rich.repr.Result:
+        yield from super().__rich_repr__()
+        yield "spinner", self.spinner
+
+    def render(self) -> RenderResult:
+        return self.get_spin_frame() or ""
+
+
+class SpinButton(SpinningMixin, Button):
+    """
+    A button, but if you set the spinner, it'll override the label and disable pressing.
+    """
+    DEFAULT_CSS = """
+    SpinButton {
+        width: auto;
+        min-width: 16;
+        height: 3;
+        background: $panel;
+        color: $text;
+        border: none;
+        border-top: tall $panel-lighten-2;
+        border-bottom: tall $panel-darken-3;
+        content-align: center middle;
+        text-style: bold;
+    }
+
+    SpinButton:focus {
+        text-style: bold reverse;
+    }
+
+    SpinButton:hover {
+        border-top: tall $panel;
+        background: $panel-darken-2;
+        color: $text;
+    }
+    """
+
+    def press(self) -> Self:
+        if self.get_spin_frame() is not None:
+            return self
+        return super().press()
+
+    def render(self) -> TextType:
+        if (frame := self.get_spin_frame()) is None:
+            return super().render()
+        else:
+            label = Text.assemble(" ", frame, " ")
+            label.stylize(self.text_style)
+            return label
+
+
+class ActionButton(SpinButton):
+    """
+    A button that can show a spinner based on a future
+    """
+
+    def track_future(self, spinner: str, future):
+        """
+        Set the spinner to track the given task/future/etc.
+
+        This is not re-entrant; do not call multiple times. Instead use
+        :func:`asyncio.gather`.
+        """
+        future = asyncio.ensure_future(future)
+        self.spinner = spinner
+
+        @future.add_done_callback
+        def done(_):
+            self.spinner = None
+
+        return future

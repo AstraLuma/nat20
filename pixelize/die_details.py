@@ -1,14 +1,16 @@
 from textual import on, work
+from textual.app import ComposeResult
+from textual.containers import Grid, Vertical
 from textual.reactive import reactive
-from textual.screen import Screen
-from textual.widgets import Static, Header, Footer, Label, Button
+from textual.screen import Screen, ModalScreen
+from textual.widgets import Input, Static, Header, Footer, Label, Button
 import nat20
 
 from nat20.messages import (
     BatteryState, DieFlavor, RollState_State,
 )
 
-from .junk_drawer import Jumbo, WorkingModal
+from .junk_drawer import ActionButton, Jumbo, WorkingModal
 
 
 class DoubleLabel(Static):
@@ -132,6 +134,46 @@ class FlavorLabel(Label):
                 return f"Flavor: {flavor}"
 
 
+class ChangeNameModal(ModalScreen):
+    """
+    Prompts the user to change the name of the given die.
+    """
+    die: nat20.Pixel
+
+    def __init__(self, die: nat20.Pixel):
+        super().__init__()
+        self.die = die
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Vertical(
+                Input(placeholder="Name", value=self.die.name, id="name"),
+                id="modal-content",
+            ),
+            ActionButton("Change", variant="error", id="change"),
+            Button("Cancel", variant="primary", id="cancel"),
+            id="modal",
+        )
+
+    @on(Input.Submitted, '#name')
+    def on_submitted(self, _):
+        self.get_widget_by_id('change').press()
+
+    @on(Button.Pressed, '#change')
+    async def on_changed(self, event: Button.Pressed):
+        async def work():
+            input: Input = self.get_widget_by_id('name')
+            newname = input.value
+            await self.die.set_name(newname)
+            self.dismiss(True)
+
+        await event.button.track_future('dots', work())
+
+    @on(Button.Pressed, '#cancel')
+    def on_cancelled(self, _):
+        self.dismiss(False)
+
+
 class DieDetailsScreen(Screen):
     die: nat20.Pixel
     ad: nat20.ScanResult
@@ -149,12 +191,16 @@ class DieDetailsScreen(Screen):
         self.die.disconnected.handler(self.on_disconnected, weak=True)
         self.inquire_die()
 
+    async def on_unmount(self, _):
+        await self.die.disconnect()
+
     @work(exclusive=True)
     async def inquire_die(self):
         await self.die.who_are_you()  # Relies on firing the data_changed event
 
     async def update_data(self, _, props):
         print("Got updated data", props)
+        self.get_child_by_id('title').text = self.die.name
         self.get_child_by_id('id').die_id = self.die.pixel_id
         self.get_child_by_id('face').state = self.die.roll_state
         self.get_child_by_id('face').face = self.die.roll_face
@@ -170,16 +216,21 @@ class DieDetailsScreen(Screen):
     def compose(self):
         yield Header()
         yield Footer()
-        yield Jumbo(text=self.die.name)
+        yield Jumbo(text=self.die.name, id='title')
+        yield Button("Change Name", id='change-name')
         yield IdLabel(die_id=self.ad.pixel_id, id='id')
         yield FlavorLabel(flavor=self.ad.flavor, id='flavor')
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
-        yield Button("Identify", id="ident")
+        yield ActionButton("Identify", id="ident")
 
     @on(Button.Pressed, '#ident')
-    async def do_ident(self, _):
-        await self.die.blink_id(0xFF)
+    async def do_ident(self, event: Button.Pressed):
+        await event.button.track_future('dots', self.die.blink_id(0xFF))
+
+    @on(Button.Pressed, '#change-name')
+    def do_name_change(self, _):
+        self.app.push_screen(ChangeNameModal(self.die))
 
     async def action_disconnect(self):
         self.dismiss()

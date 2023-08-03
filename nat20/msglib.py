@@ -134,7 +134,7 @@ class BasicMessage(Message, id=None):
         super().__init_subclass__(**kwargs)
         cls.__struct_format = sys.intern(f"<{format}")
 
-    @ classmethod
+    @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
         fields = struct.unpack(cls.__struct_format, blob)
         return cls(*fields)
@@ -148,9 +148,25 @@ class EmptyMessage(Message, id=None):
     """
     Quick class for defining messages with no fields.
     """
-    @ classmethod
+    @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
         return cls()
 
     def __struct_pack__(self) -> bytes:
         return b""
+
+
+class StrMessage(Message, id=None):
+    """
+    Define a message with a single string field.
+
+    Must be a dataclass.
+    """
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        field = dataclasses.fields(cls)[0].name
+        return cls(**{field: blob.decode('utf-8')})
+
+    def __struct_pack__(self) -> bytes:
+        field = dataclasses.fields(self)[0].name
+        return getattr(self, field).encode('utf-8')

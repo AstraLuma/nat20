@@ -32,7 +32,8 @@ from .messages import (
     Blink, BlinkAck, BlinkId, BlinkIdAck,
     StopAllAnimations,
     RequestMode, RequestRssi, Rssi,
-)  # Also, import messages so they get defined
+    SetName, SetNameAck,
+)  # Also, import .messages so everything gets registered
 
 LOG = logging.getLogger(__name__)
 
@@ -480,3 +481,11 @@ class Pixel:
             min_interval=0,
         ), Rssi)
         return msg.rssi
+
+    async def set_name(self, name: str) -> None:
+        """
+        Change the name of the die.
+        """
+        await self._link.send_and_wait(SetName(name=name), SetNameAck)
+        self.name = name
+        self.data_changed.trigger({'name'})

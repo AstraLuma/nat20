@@ -1,5 +1,3 @@
-import asyncio
-
 from textual import work, on
 from textual.app import App
 from textual.css.query import NoMatches
@@ -79,12 +77,8 @@ class Die(Static):
             print("Open the dice now hal")
             print(die)
             self.app.push_screen(
-                DieDetailsScreen(die, self._scan_result), disconnect
+                DieDetailsScreen(die, self._scan_result)
             )
-
-        def disconnect(*_):
-            print("disconnecting")
-            asyncio.create_task(die.disconnect())
 
         self.app.push_screen(
             WorkingModal("Connecting", connect()),
@@ -92,7 +86,6 @@ class Die(Static):
         )
 
     def compose(self):
-        """Create child widgets of a stopwatch."""
         yield Button("Connect", id="connect")
         yield (ds := DieSummary(id="info"))
         if self._scan_result is not None:
