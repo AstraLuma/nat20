@@ -151,8 +151,8 @@ class BasicMessage(Message, id=None):
     def __struct_unpack__(cls, blob: bytes) -> Self:
         sfld = _str_field_name(cls)
         if sfld is not None:
-            l = struct.calcsize(cls.__struct_format)
-            blob, bin = blob[:l], blob[l:]
+            slen = struct.calcsize(cls.__struct_format)
+            blob, bin = blob[:slen], blob[slen:]
         fields = struct.unpack(cls.__struct_format, blob)
         if sfld is None:
             return cls(*fields)

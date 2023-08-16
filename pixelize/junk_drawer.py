@@ -65,7 +65,12 @@ class ErrorModal(ModalScreen):
 class OkCancelModal(ModalScreen):
     """Screen with a dialog to quit."""
 
-    def __init__(self, msg: str, show_ok: bool = True, show_cancel: bool = True, timeout: Optional[float] = None):
+    def __init__(self,
+                 msg: str,
+                 show_ok: bool = True,
+                 show_cancel: bool = True,
+                 timeout: Optional[float] = None,
+                 ):
         super().__init__()
         self.msg = msg
         self.show_ok = show_ok
