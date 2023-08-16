@@ -33,6 +33,7 @@ from .messages import (
     StopAllAnimations,
     RequestMode, RequestRssi, Rssi,
     SetName, SetNameAck,
+    NotifyUser, NotifyUserAck, OkCancel,
 )  # Also, import .messages so everything gets registered
 
 LOG = logging.getLogger(__name__)
@@ -225,6 +226,9 @@ class Pixel:
         "(cl: set[str]) Any of the props changed, giving the set of which ones"
     )
     disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
+    notify_user = aioevents.Event(
+        "(cb: Callable[[OkCancel], None]) The die has something to tell the user."
+    )
 
     @property
     def flavor(self) -> DieFlavor:
@@ -288,6 +292,7 @@ class Pixel:
 
         self._link._message_handlers[RollState].append(self._on_roll_state)
         self._link._message_handlers[BatteryLevel].append(self._on_battery_level)
+        self._link._message_handlers[NotifyUser].append(self._on_notify_user)
 
     async def connect(self):
         """
@@ -335,6 +340,12 @@ class Pixel:
         self.batt_level = msg.level
         self.data_changed.trigger({'batt_state', 'batt_level'})
         self.got_battery_level.trigger(msg)
+
+    def _on_notify_user(self, msg: NotifyUser):
+        def respond(resp: OkCancel) -> asyncio.Future | asyncio.Task:
+            return asyncio.create_task(self._link.send(NotifyUserAck(resp)))
+
+        self.notify_user.trigger(msg.text, msg.ok, msg.cancel, msg.timeout, respond)
 
     def __repr__(self):
         return (
