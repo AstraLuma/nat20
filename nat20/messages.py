@@ -472,23 +472,62 @@ class Rssi(BasicMessage, id=36, format="b"):
 
 
 @dataclass
-class Calibrate(BasicMessage, id=37, format=""):
-    ...
+class Calibrate(EmptyMessage, id=37):
+    """
+    Start the calibration process.
+    """
 
 
 @dataclass
-class CalibrateFace(BasicMessage, id=38, format=""):
-    ...
+class CalibrateFace(BasicMessage, id=38, format="B"):
+    """
+    Immediately calibrate the given face.
+    """
+    face: int
 
 
 @dataclass
-class NotifyUser(BasicMessage, id=39, format=""):
-    ...
+class NotifyUser(BasicMessage, id=39, format="BBB"):
+    """
+    Die asking the user a question
+    """
+    #: How long the die will wait for a response, in seconds
+    timeout: int
+    #: Whether "ok" is an accepted answer
+    ok: bool
+    #: Whether "cancel" is an accepted answer
+    cancel: bool
+    #: Prompt to show the user
+    text: str
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.ok = bool(self.ok)
+        self.cancel = bool(self.cancel)
+        return self
+
+
+class OkCancel(IntEnum):
+    """
+    Button enum for :class:`NotifyUserAck`
+    """
+    Cancel = 0
+    Ok = 1
 
 
 @dataclass
-class NotifyUserAck(BasicMessage, id=40, format=""):
-    ...
+class NotifyUserAck(BasicMessage, id=40, format="B"):
+    """
+    Response to :class:`NotifyUser`
+    """
+    ok_cancel: OkCancel
+
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        self = super().__struct_unpack__(blob)
+        self.ok_cancel = OkCancel(self.ok_cancel)
+        return self
 
 
 @dataclass

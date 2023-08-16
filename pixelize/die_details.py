@@ -1,16 +1,18 @@
+from typing import Callable
+
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Grid, Vertical
 from textual.reactive import reactive
 from textual.screen import Screen, ModalScreen
 from textual.widgets import Input, Static, Header, Footer, Label, Button
-import nat20
 
+import nat20
 from nat20.messages import (
     BatteryState, DieFlavor, RollState_State,
 )
 
-from .junk_drawer import ActionButton, Jumbo, WorkingModal
+from .junk_drawer import ActionButton, Jumbo, OkCancelModal, WorkingModal
 
 
 class DoubleLabel(Static):
@@ -189,6 +191,7 @@ class DieDetailsScreen(Screen):
 
         self.die.data_changed.handler(self.update_data, weak=True)
         self.die.disconnected.handler(self.on_disconnected, weak=True)
+        self.die.notify_user.handler(self.on_notify, weak=True)
         self.inquire_die()
 
     async def on_unmount(self, _):
@@ -213,6 +216,19 @@ class DieDetailsScreen(Screen):
             WorkingModal("Reconnecting", self.die.connect()),
         )
 
+    def on_notify(self, _, text: str, ok: bool, cancel: bool, timeout: int, respond: Callable):
+        def got_response(resp):
+            if resp is TimeoutError:
+                pass
+            else:
+                respond(resp)
+        self.app.push_screen(OkCancelModal(
+            text,
+            show_ok=ok,
+            show_cancel=cancel,
+            timeout=timeout,
+        ), got_response)
+
     def compose(self):
         yield Header()
         yield Footer()
@@ -223,6 +239,7 @@ class DieDetailsScreen(Screen):
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
         yield ActionButton("Identify", id="ident")
+        yield Button("Calibrate", id="calibrate")
 
     @on(Button.Pressed, '#ident')
     async def do_ident(self, event: Button.Pressed):
@@ -231,6 +248,10 @@ class DieDetailsScreen(Screen):
     @on(Button.Pressed, '#change-name')
     def do_name_change(self, _):
         self.app.push_screen(ChangeNameModal(self.die))
+
+    @on(Button.Pressed, '#calibrate')
+    async def do_calibrate(self, _):
+        await self.die.start_calibration()
 
     async def action_disconnect(self):
         self.dismiss()

@@ -6,7 +6,7 @@ import dataclasses
 import logging
 import struct
 import sys
-from typing import Self, Iterable
+from typing import Optional, Self, Iterable
 import typing_extensions
 
 
@@ -113,6 +113,17 @@ class Message(abc.ABC):
             _messages[id] = cls
 
 
+def _str_field_name(cls_or_object) -> Optional[str]:
+    """
+    Examines a dataclass's fields and returns the name of the final string field,
+    if there is one.
+    """
+    flds = dataclasses.fields(cls_or_object)
+    f = flds[-1]
+    if f.type == str:
+        return f.name
+
+
 class BasicMessage(Message, id=None):
     """
     Provides a helpful basic version of :class:`Message`
@@ -129,6 +140,8 @@ class BasicMessage(Message, id=None):
     Args:
         id (int|None): The message ID, or None
         format (str): The format in :mod:`struct` form.
+
+    If the last field is a `str`, then it consumes the entire rest of the message.
     """
     def __init_subclass__(cls, /, format: str, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -136,12 +149,39 @@ class BasicMessage(Message, id=None):
 
     @classmethod
     def __struct_unpack__(cls, blob: bytes) -> Self:
+        sfld = _str_field_name(cls)
+        if sfld is not None:
+            slen = struct.calcsize(cls.__struct_format)
+            blob, bin = blob[:slen], blob[slen:]
         fields = struct.unpack(cls.__struct_format, blob)
-        return cls(*fields)
+        if sfld is None:
+            return cls(*fields)
+        else:
+            return cls(*fields, bin.decode('utf-8'))
 
     def __struct_pack__(self) -> bytes:
+        sfld = _str_field_name(self)
         fields = dataclasses.astuple(self)
-        return struct.pack(self.__struct_format, *fields)
+        if sfld is None:
+            return struct.pack(self.__struct_format, *fields)
+        else:
+            return struct.pack(self.__struct_format, *fields[:-1]) + fields[-1].encode('utf-8')
+
+
+class StrMessage(Message, id=None):
+    """
+    Define a message with one string field.
+
+    Must be a dataclass.
+    """
+    @classmethod
+    def __struct_unpack__(cls, blob: bytes) -> Self:
+        field = dataclasses.fields(cls)[-1].name
+        return cls(**{field: blob.decode('utf-8')})
+
+    def __struct_pack__(self) -> bytes:
+        field = dataclasses.fields(self)[-1].name
+        return getattr(self, field).encode('utf-8')
 
 
 class EmptyMessage(Message, id=None):
@@ -154,19 +194,3 @@ class EmptyMessage(Message, id=None):
 
     def __struct_pack__(self) -> bytes:
         return b""
-
-
-class StrMessage(Message, id=None):
-    """
-    Define a message with a single string field.
-
-    Must be a dataclass.
-    """
-    @classmethod
-    def __struct_unpack__(cls, blob: bytes) -> Self:
-        field = dataclasses.fields(cls)[0].name
-        return cls(**{field: blob.decode('utf-8')})
-
-    def __struct_pack__(self) -> bytes:
-        field = dataclasses.fields(self)[0].name
-        return getattr(self, field).encode('utf-8')

@@ -62,6 +62,48 @@ class ErrorModal(ModalScreen):
         self.dismiss(self.error)
 
 
+class OkCancelModal(ModalScreen):
+    """Screen with a dialog to quit."""
+
+    def __init__(self,
+                 msg: str,
+                 show_ok: bool = True,
+                 show_cancel: bool = True,
+                 timeout: Optional[float] = None,
+                 ):
+        super().__init__()
+        self.msg = msg
+        self.show_ok = show_ok
+        self.show_cancel = show_cancel
+        if timeout is not None:
+            self.timer = self.set_timer(timeout, self.on_timeout, pause=True)
+        else:
+            self.timer = None
+
+    def on_mount(self, _):
+        if self.timer is not None:
+            self.timer.resume()
+
+    def compose(self):
+        yield Grid(
+            Label(str(self.msg), id="modal-content"),
+            Button("Ok", variant="primary", id="ok"),
+            Button("Cancel", variant="default", id="cancel"),
+            id="modal",
+        )
+
+    @on(Button.Pressed, '#ok')
+    def on_ok_pressed(self, event: Button.Pressed) -> None:
+        self.dismiss(True)
+
+    @on(Button.Pressed, '#cancel')
+    def on_cancel_pressed(self, event: Button.Pressed) -> None:
+        self.dismiss(False)
+
+    def on_timeout(self):
+        self.dismiss(TimeoutError)
+
+
 class Jumbo(Static):
     text = reactive("")
     font = reactive(art.DEFAULT_FONT)

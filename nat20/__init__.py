@@ -33,6 +33,8 @@ from .messages import (
     StopAllAnimations,
     RequestMode, RequestRssi, Rssi,
     SetName, SetNameAck,
+    NotifyUser, NotifyUserAck, OkCancel,
+    Calibrate, CalibrateFace,
 )  # Also, import .messages so everything gets registered
 
 LOG = logging.getLogger(__name__)
@@ -225,6 +227,9 @@ class Pixel:
         "(cl: set[str]) Any of the props changed, giving the set of which ones"
     )
     disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
+    notify_user = aioevents.Event(
+        "(cb: Callable[[OkCancel], None]) The die has something to tell the user."
+    )
 
     @property
     def flavor(self) -> DieFlavor:
@@ -288,6 +293,7 @@ class Pixel:
 
         self._link._message_handlers[RollState].append(self._on_roll_state)
         self._link._message_handlers[BatteryLevel].append(self._on_battery_level)
+        self._link._message_handlers[NotifyUser].append(self._on_notify_user)
 
     async def connect(self):
         """
@@ -335,6 +341,12 @@ class Pixel:
         self.batt_level = msg.level
         self.data_changed.trigger({'batt_state', 'batt_level'})
         self.got_battery_level.trigger(msg)
+
+    def _on_notify_user(self, msg: NotifyUser):
+        def respond(resp: OkCancel) -> asyncio.Future | asyncio.Task:
+            return asyncio.create_task(self._link.send(NotifyUserAck(resp)))
+
+        self.notify_user.trigger(msg.text, msg.ok, msg.cancel, msg.timeout, respond)
 
     def __repr__(self):
         return (
@@ -489,3 +501,21 @@ class Pixel:
         await self._link.send_and_wait(SetName(name=name), SetNameAck)
         self.name = name
         self.data_changed.trigger({'name'})
+
+    async def start_calibration(self) -> None:
+        """
+        Start the calibration process.
+
+        Note that this method only _starts_ it. Interaction will occur via the
+        :attr:`notify_user` event. The die will not function normally until the
+        calibration is completed or times out.
+        """
+        await self._link.send(Calibrate())
+
+    async def calibrate_face(self, face: int) -> None:
+        """
+        Calibrate a specific face.
+
+        The die must be resting on a flat, level surface with the noted face up.
+        """
+        await self._link.send(CalibrateFace(face))
