@@ -472,13 +472,18 @@ class Rssi(BasicMessage, id=36, format="b"):
 
 
 @dataclass
-class Calibrate(BasicMessage, id=37, format=""):
-    ...
+class Calibrate(EmptyMessage, id=37):
+    """
+    Start the calibration process.
+    """
 
 
 @dataclass
-class CalibrateFace(BasicMessage, id=38, format=""):
-    ...
+class CalibrateFace(BasicMessage, id=38, format="B"):
+    """
+    Immediately calibrate the given face.
+    """
+    face: int
 
 
 @dataclass

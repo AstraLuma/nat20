@@ -34,6 +34,7 @@ from .messages import (
     RequestMode, RequestRssi, Rssi,
     SetName, SetNameAck,
     NotifyUser, NotifyUserAck, OkCancel,
+    Calibrate, CalibrateFace,
 )  # Also, import .messages so everything gets registered
 
 LOG = logging.getLogger(__name__)
@@ -500,3 +501,21 @@ class Pixel:
         await self._link.send_and_wait(SetName(name=name), SetNameAck)
         self.name = name
         self.data_changed.trigger({'name'})
+
+    async def start_calibration(self) -> None:
+        """
+        Start the calibration process.
+
+        Note that this method only _starts_ it. Interaction will occur via the
+        :attr:`notify_user` event. The die will not function normally until the
+        calibration is completed or times out.
+        """
+        await self._link.send(Calibrate())
+
+    async def calibrate_face(self, face: int) -> None:
+        """
+        Calibrate a specific face.
+
+        The die must be resting on a flat, level surface with the noted face up.
+        """
+        await self._link.send(CalibrateFace(face))

@@ -239,6 +239,7 @@ class DieDetailsScreen(Screen):
         yield BatteryLabel(percent=self.ad.batt_level, id='batt')
         yield FaceLabel(state=self.ad.roll_state, face=self.ad.roll_face, id='face')
         yield ActionButton("Identify", id="ident")
+        yield Button("Calibrate", id="calibrate")
 
     @on(Button.Pressed, '#ident')
     async def do_ident(self, event: Button.Pressed):
@@ -247,6 +248,10 @@ class DieDetailsScreen(Screen):
     @on(Button.Pressed, '#change-name')
     def do_name_change(self, _):
         self.app.push_screen(ChangeNameModal(self.die))
+
+    @on(Button.Pressed, '#calibrate')
+    async def do_calibrate(self, _):
+        await self.die.start_calibration()
 
     async def action_disconnect(self):
         self.dismiss()
