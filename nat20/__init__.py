@@ -35,6 +35,7 @@ from .messages import (
     SetName, SetNameAck,
     NotifyUser, NotifyUserAck, OkCancel,
     Calibrate, CalibrateFace,
+    RequestTemperature, Temperature,
 )  # Also, import .messages so everything gets registered
 
 LOG = logging.getLogger(__name__)
@@ -519,3 +520,11 @@ class Pixel:
         The die must be resting on a flat, level surface with the noted face up.
         """
         await self._link.send(CalibrateFace(face))
+
+    async def get_temperature(self) -> tuple[float, float]:
+        """
+        Get the current temperatue of the die microcontroller and battery,
+        in degrees Celsius.
+        """
+        temps = await self._link.send_and_wait(RequestTemperature(), Temperature)
+        return temps.mcu_temp / 100, temps.batt_temp / 100

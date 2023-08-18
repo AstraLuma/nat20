@@ -53,6 +53,7 @@ async def main():
         print(await die.get_roll_state())
         print(await die.get_battery_level())
         print("RSSI:", await die.get_rssi())
+        print("Temps:", await die.get_temperature())
         # await die.blink(
         #     count=3,
         #     duration=500,

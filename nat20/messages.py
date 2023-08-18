@@ -633,13 +633,20 @@ class StopAllAnimations(EmptyMessage, id=59):
 
 
 @dataclass
-class RequestTemperature(BasicMessage, id=60, format=""):
-    ...
+class RequestTemperature(EmptyMessage, id=60):
+    """
+    Get the current temperature
+
+    Die replies with :class:`Temperature`.
+    """
 
 
 @dataclass
-class Temperature(BasicMessage, id=61, format=""):
-    ...
+class Temperature(BasicMessage, id=61, format="hh"):
+    #: CPU temp in centidegrees Celsius
+    mcu_temp: int
+    #: Battery temp in centidgrees Celsius
+    batt_temp: int
 
 
 @dataclass
