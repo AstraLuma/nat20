@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nat20"
-version = "0.0.1"
+version = "0.1.0"
 description = "Access Pixels dice with async and bleak"
 authors = ["Jamie Bliss <jamie@ivyleav.es>"]
 license = "LGPL-3.0-or-later"
