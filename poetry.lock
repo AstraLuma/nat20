@@ -1636,20 +1636,20 @@ typing-extensions = ">=4.4.0,<5.0.0"
 
 [[package]]
 name = "textual-dev"
-version = "1.1.0"
+version = "1.2.1"
 description = "Development tools for working with Textual"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "textual_dev-1.1.0-py3-none-any.whl", hash = "sha256:c57320636098e31fa5d5c29fc3bc60829bb420da3c76bfed24db6eacf178dbc6"},
-    {file = "textual_dev-1.1.0.tar.gz", hash = "sha256:e2f8ce4e1c18a16b80282f3257cd2feb49a7ede289a78908c9063ce071bb77ce"},
+    {file = "textual_dev-1.2.1-py3-none-any.whl", hash = "sha256:a96ff43841cadf853dd689d68c2fc920a23ad71cfa9a33917ca53e96d1cc81f3"},
+    {file = "textual_dev-1.2.1.tar.gz", hash = "sha256:0bda11adfc541e0cc9e49bdf37a8b852281dc2387bb6ff3d01f40c7a3f841684"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.1"
 click = ">=8.1.2"
 msgpack = ">=1.0.3"
-textual = ">=0.32.0"
+textual = ">=0.33.0"
 typing-extensions = ">=4.4.0,<5.0.0"
 
 [[package]]
