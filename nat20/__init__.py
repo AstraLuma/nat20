@@ -18,7 +18,7 @@ import enum
 import logging
 import struct
 from types import EllipsisType
-from typing import Self
+from typing import Self, Callable
 
 import aioevents
 import bleak
@@ -222,12 +222,49 @@ class Pixel:
 
     _link: PixelLink
 
-    got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been sent.")
-    got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been sent.")
+    #: A new :class:`RollState` has been received.
+    #:
+    #: Args:
+    #:   rs (RollState): Current roll status
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, RollState], None]]
+    got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been received.")
+
+    #: A new :class:`BatteryLevel` has been received
+    #:
+    #: Args:
+    #:   bl (BatteryLevel): Current battery status.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, BatteryLevel], None]]
+    got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been received.")
+
+    #: Any of the properties changed. The argument says which ones.
+    #:
+    #: Args:
+    #:   changed (set[str]): Which properties have changed, by name.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, set[str], None]]
     data_changed = aioevents.Event(
         "(cl: set[str]) Any of the props changed, giving the set of which ones"
     )
+
+    #: We were unexpectedly disconnected from the die.
+    #:
+    #: No arguments.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self], None]]
     disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
+
+    #: The die would like to inform or ask the user something.
+    #:
+    #: Args:
+    #:   msg (str): The message to show the user
+    #:   ok (bool): Is "OK" an acceptable response?
+    #:   cancel (bool): Is "Cancel" an acceptable response?
+    #:   timeout (int): The time in seconds until the die times out
+    #:   callback (typing.Callable[[OkCancel], None]): Function to call with the user's response
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, str, bool, bool, int, typing.Callable[[OkCancel], None], None]]]
     notify_user = aioevents.Event(
         "(cb: Callable[[OkCancel], None]) The die has something to tell the user."
     )
