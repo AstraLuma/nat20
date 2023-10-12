@@ -190,7 +190,7 @@ class Pixel:
     Class for a pixel die.
 
     Do not construct directly, use :func:`scan_for_dice` to find the die you
-    want and then use :meth:`ScanResult.connect` to get an instance.
+    want and then use :meth:`ScanResult.hydrate` to get an instance.
     """
     # The requirement to use scan_for_dice() is because while bleak does
     # support connecting by address, it internally just does a scan anyway,
@@ -222,14 +222,57 @@ class Pixel:
 
     _link: PixelLink
 
-    got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been sent.")
-    got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been sent.")
+    #: A new :class:`RollState` has been received.
+    #:
+    #: Args:
+    #:   rs (RollState): Current roll status
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, RollState], None]]
+    got_roll_state = aioevents.Event("(rs: RollState) A new RollState has been received.")
+
+    #: A new :class:`BatteryLevel` has been received
+    #:
+    #: Args:
+    #:   bl (BatteryLevel): Current battery status.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, BatteryLevel], None]]
+    got_battery_level = aioevents.Event("(bl: BatteryLevel) A new BatteryState has been received.")
+
+    #: Any of the properties changed. The argument says which ones.
+    #:
+    #: Args:
+    #:   changed (set[str]): Which properties have changed, by name.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, set[str], None]]
     data_changed = aioevents.Event(
         "(cl: set[str]) Any of the props changed, giving the set of which ones"
     )
+
+    #: We were unexpectedly disconnected from the die.
+    #:
+    #: No arguments.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self], None]]
     disconnected = aioevents.Event("() We've been unexpectedly disconnected from the die.")
+
+    #: The die would like to inform or ask the user something.
+    #:
+    #: Args:
+    #:   msg (str): The message to show the user
+    #:   ok (bool): Is "OK" an acceptable response?
+    #:   cancel (bool): Is "Cancel" an acceptable response?
+    #:   timeout (int): The time in seconds until the die times out
+    #:   callback (typing.Callable[[OkCancel], None]): Function to call with the user's response
+    #:
+    #: When you receive this event, you should display a prompt to the user
+    #: (using whatever UI is reasonable), and call ``callback`` with the
+    #: user's response. If the timeout expires (due to no responses from the
+    #: user, or the prompt was never shown), the die will interpret it as a Cancel.
+    #:
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, str, bool, bool, int, typing.Callable[[
+    #:    OkCancel], None], None]]]
     notify_user = aioevents.Event(
-        "(cb: Callable[[OkCancel], None]) The die has something to tell the user."
+        "The die has something to tell the user. (See online docs for full usage.)"
     )
 
     @property
