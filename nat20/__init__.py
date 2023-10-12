@@ -264,9 +264,14 @@ class Pixel:
     #:   timeout (int): The time in seconds until the die times out
     #:   callback (typing.Callable[[OkCancel], None]): Function to call with the user's response
     #:
+    #: When you receive this event, you should display a prompt to the user
+    #: (using whatever UI is reasonable), and call ``callback`` with the
+    #: user's response. If the timeout expires (due to no responses from the
+    #: user, or the prompt was never shown), the die will interpret it as a Cancel.
+    #:
     #: :type: aioevents.Event[typing.Callable[[typing.Self, str, bool, bool, int, typing.Callable[[OkCancel], None], None]]]
     notify_user = aioevents.Event(
-        "(cb: Callable[[OkCancel], None]) The die has something to tell the user."
+        "The die has something to tell the user. (See online docs for full usage.)"
     )
 
     @property
