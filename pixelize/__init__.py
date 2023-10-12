@@ -115,12 +115,17 @@ class DiceBagScreen(Screen):
                 # Create a new die
                 die = Die(id=cid)
                 die.update_from_result(dev)
-                bag.mount(die, before=0)
+                bag.mount(die)
             else:
                 # Update the existing one
                 die.update_from_result(dev)
-                if dev.roll_state == RollState_State.OnFace and len(bag.children) > 1:
-                    bag.move_child(die, before=0)
+                # if dev.roll_state == RollState_State.OnFace and len(bag.children) > 1:
+                #     try:
+                #         bag.move_child(die, before=0)
+                #     except ValueError:
+                #         # Not entirely sure why this happens. weird init stuff?
+                #         # Maybe if it's already first?
+                #         pass
 
 
 class PixelsApp(App):
