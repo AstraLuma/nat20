@@ -190,7 +190,7 @@ class Pixel:
     Class for a pixel die.
 
     Do not construct directly, use :func:`scan_for_dice` to find the die you
-    want and then use :meth:`ScanResult.connect` to get an instance.
+    want and then use :meth:`ScanResult.hydrate` to get an instance.
     """
     # The requirement to use scan_for_dice() is because while bleak does
     # support connecting by address, it internally just does a scan anyway,
