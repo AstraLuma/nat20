@@ -18,7 +18,7 @@ import enum
 import logging
 import struct
 from types import EllipsisType
-from typing import Self, Callable
+from typing import Self
 
 import aioevents
 import bleak
@@ -269,7 +269,8 @@ class Pixel:
     #: user's response. If the timeout expires (due to no responses from the
     #: user, or the prompt was never shown), the die will interpret it as a Cancel.
     #:
-    #: :type: aioevents.Event[typing.Callable[[typing.Self, str, bool, bool, int, typing.Callable[[OkCancel], None], None]]]
+    #: :type: aioevents.Event[typing.Callable[[typing.Self, str, bool, bool, int, typing.Callable[[
+    #:    OkCancel], None], None]]]
     notify_user = aioevents.Event(
         "The die has something to tell the user. (See online docs for full usage.)"
     )
