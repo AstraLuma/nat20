@@ -17,7 +17,7 @@ aioevents = "^0.2"
 
 
 [tool.poetry.group.tui.dependencies]
-textual = ">=0.28.1,<0.39.0"
+textual = ">=0.28.1,<0.47.0"
 art = "^6.0"
 
 
